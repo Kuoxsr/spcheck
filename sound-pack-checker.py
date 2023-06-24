@@ -15,7 +15,7 @@ Command-line arguments:
     --version   (-v)    Show version number
 """
 
-__version__ = '1.0'
+__version__ = '1.1'
 __maintainer__ = "kuoxsr@gmail.com"
 __status__ = "Prototype"
 
@@ -37,6 +37,9 @@ def handle_command_line():
     """
     Handle arguments supplied by the user
     """
+
+    # Platform independent clearing of screen
+    os.system('cls||clear')
 
     parser = argparse.ArgumentParser(
         prog="Sound Pack Checker",
@@ -149,7 +152,7 @@ def main():
         if not p.exists():
             bad_paths.append(p)
 
-    print("\n\nThe following paths exist in JSON, but do not correspond to actual file system files:")
+    print("The following paths exist in JSON, but do not correspond to actual file system files:")
     for bad in bad_paths:
         print(bad)
 
