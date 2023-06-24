@@ -15,15 +15,15 @@ Command-line arguments:
     --version   (-v)    Show version number
 """
 
-__version__ = '0.1'
+__version__ = '1.0'
 __maintainer__ = "kuoxsr@gmail.com"
 __status__ = "Prototype"
 
 # Import modules
 import argparse
-import math
+import json
+from pathlib import Path
 import os
-import random
 
 # Constants
 
@@ -40,7 +40,7 @@ def handle_command_line():
 
     parser = argparse.ArgumentParser(
         prog="Sound Pack Checker",
-        description="Generate two lists: json lines that don't mach files, and files that don't match the json.")
+        description="generates lists of invalid connections between json and sound files.")
 
     parser.add_argument("-v", "--version", action="version", version="%(prog)s version " + __version__)
 
@@ -52,7 +52,42 @@ def handle_command_line():
 
     args = parser.parse_args()
 
-    # TODO: validate path
+    # path is a LIST at this point, and we want just a string
+    if len(args.path) > 0:
+        args.path = args.path[0]
+    else:
+        args.path = ""
+
+    # Debugging
+    # print("args:", args); exit()
+
+    # Has the user specified a path at all?
+    if not args.path:
+        print("Path to sounds.json is required.")
+        exit()
+
+    path = Path(args.path)
+
+    # Debugging
+    # print(f"{path} - is_dir: {path.is_dir()}")
+    # print(f"path.name: {path.name}")
+
+    # Does path folder exist on the file system?
+    if not path.exists():
+        print(f"Specified path not found. {path} is not a valid filesystem path.")
+        exit()
+
+    # Has the user specified the wrong file name?
+    if path.name != "sounds.json":
+        args.path += "sounds.json"
+
+    # Does sounds.json exist, now that we've added it for them (if necessary?)
+    if not Path(args.path).exists():
+        print("sounds.json not found.")
+        exit()
+
+    # Finally, make the argument a Path  (does this work?)
+    args.path = Path(args.path)
 
 #    print("args:",args); exit()
     return args
@@ -65,10 +100,64 @@ def main():
     This function generates lists of invalid connections between json and sound files
     """
 
+    args = handle_command_line()
+
+    with open(args.path, "r") as read_file:
+        data = json.load(read_file)
+
+    # debugging
+    # print(data)
+    # print(f"keys: {data.keys()}")
+    # print(f"Number of sound events: {len(data)}")
+    # print(f"type: {type(data['entity.villager.ambient']['sounds'][0]['name'])}")
+    # print(f"value of entity.villager.ambient: {data['entity.villager.ambient']['sounds'][0]['name']}")
+
+    file_paths = []
+
     # Loop through json paths
-    #     - Add path to first list if no ogg file in that location
+    for value in data.values():
+
+        for sound in value['sounds']:
+
+            sound_path = ""
+
+            if isinstance(sound, str):
+                # Debugging:
+                # print(f"\nthis should be a path already: {sound}")
+                # file_paths.append(sound)
+                sound_path = sound
+
+            elif isinstance(sound, dict):
+                # Debugging:
+                # print(f"\nthis is a dictionary: {sound}")
+                # file_paths.append(sound['name'])
+                sound_path = sound['name']
+
+            else:
+                print(f"I have no idea how to process this: {sound}")
+
+            # Append the fully qualified path to the array
+            full_path = args.path.parent / Path("sounds") / Path(sound_path).with_suffix(".ogg")
+            file_paths.append(full_path)
+
+    # Iterate over our full list of paths
+    bad_paths = []
+    for p in file_paths:
+        # full_path = args.path.parent / Path("sounds") / Path(fp).with_suffix(".ogg")
+
+        # Save to a list if path is invalid
+        if not p.exists():
+            bad_paths.append(p)
+
+    print("\n\nThe following paths exist in JSON, but do not correspond to actual file system files:")
+    for bad in bad_paths:
+        print(bad)
 
     # Loop through ogg files in folder structure
+    print("\n\nThe following .ogg files exist, but no JSON record refers to them:")
+    for i in args.path.parent.rglob("*.ogg"):
+        if i not in file_paths:
+            print(i)
     #     - Add path to second list if not mentioned in json paths
 
     # Print output in console
