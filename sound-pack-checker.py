@@ -15,7 +15,7 @@ Command-line arguments:
     --version   (-v)    Show version number
 """
 
-__version__ = '1.1'
+__version__ = '1.2'
 __maintainer__ = "kuoxsr@gmail.com"
 __status__ = "Prototype"
 
@@ -61,19 +61,12 @@ def handle_command_line():
     else:
         args.path = ""
 
-    # Debugging
-    # print("args:", args); exit()
-
     # Has the user specified a path at all?
     if not args.path:
         print("Path to sounds.json is required.")
         exit()
 
     path = Path(args.path)
-
-    # Debugging
-    # print(f"{path} - is_dir: {path.is_dir()}")
-    # print(f"path.name: {path.name}")
 
     # Does path folder exist on the file system?
     if not path.exists():
@@ -108,36 +101,22 @@ def main():
     with open(args.path, "r") as read_file:
         data = json.load(read_file)
 
-    # debugging
-    # print(data)
-    # print(f"keys: {data.keys()}")
-    # print(f"Number of sound events: {len(data)}")
-    # print(f"type: {type(data['entity.villager.ambient']['sounds'][0]['name'])}")
-    # print(f"value of entity.villager.ambient: {data['entity.villager.ambient']['sounds'][0]['name']}")
-
     file_paths = []
 
     # Loop through json paths
     for value in data.values():
 
         for sound in value['sounds']:
-
             sound_path = ""
 
             if isinstance(sound, str):
-                # Debugging:
-                # print(f"\nthis should be a path already: {sound}")
-                # file_paths.append(sound)
                 sound_path = sound
 
             elif isinstance(sound, dict):
-                # Debugging:
-                # print(f"\nthis is a dictionary: {sound}")
-                # file_paths.append(sound['name'])
                 sound_path = sound['name']
 
             else:
-                print(f"I have no idea how to process this: {sound}")
+                print(f"I have no idea how to process this: {sound}\n")
 
             # Append the fully qualified path to the array
             full_path = args.path.parent / Path("sounds") / Path(sound_path).with_suffix(".ogg")
@@ -146,13 +125,10 @@ def main():
     # Iterate over our full list of paths
     bad_paths = []
     for p in file_paths:
-        # full_path = args.path.parent / Path("sounds") / Path(fp).with_suffix(".ogg")
-
-        # Save to a list if path is invalid
         if not p.exists():
             bad_paths.append(p)
 
-    print("The following paths exist in JSON, but do not correspond to actual file system files:")
+    print("\nThe following paths exist in JSON, but do not correspond to actual file system files:")
     for bad in bad_paths:
         print(bad)
 
@@ -161,9 +137,6 @@ def main():
     for i in args.path.parent.rglob("*.ogg"):
         if i not in file_paths:
             print(i)
-    #     - Add path to second list if not mentioned in json paths
-
-    # Print output in console
 
 
 # ------------------------------------------------------
