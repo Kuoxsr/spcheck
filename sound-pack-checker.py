@@ -15,15 +15,16 @@ Command-line arguments:
     --version   (-v)    Show version number
 """
 
-__version__ = '1.2'
+__version__ = '1.3'
 __maintainer__ = "kuoxsr@gmail.com"
 __status__ = "Prototype"
 
 # Import modules
 import argparse
 import json
-from pathlib import Path
 import os
+from pathlib import Path
+from collections import Counter
 
 # Constants
 
@@ -89,22 +90,11 @@ def handle_command_line():
     return args
 
 
-# Main -------------------------------------------------
-def main():
-    """
-    Main program loop
-    This function generates lists of invalid connections between json and sound files
-    """
-
-    args = handle_command_line()
-
-    with open(args.path, "r") as read_file:
-        data = json.load(read_file)
-
+def get_links(json_data: dict, path: Path):
     file_paths = []
 
     # Loop through json paths
-    for value in data.values():
+    for value in json_data.values():
 
         for sound in value['sounds']:
             sound_path = ""
@@ -119,24 +109,90 @@ def main():
                 print(f"I have no idea how to process this: {sound}\n")
 
             # Append the fully qualified path to the array
-            full_path = args.path.parent / Path("sounds") / Path(sound_path).with_suffix(".ogg")
+            full_path = path.parent / Path("sounds") / Path(sound_path).with_suffix(".ogg")
             file_paths.append(full_path)
 
-    # Iterate over our full list of paths
-    bad_paths = []
-    for p in file_paths:
-        if not p.exists():
-            bad_paths.append(p)
+    return file_paths
 
-    print("\nThe following paths exist in JSON, but do not correspond to actual file system files:")
-    for bad in bad_paths:
-        print(bad)
 
-    # Loop through ogg files in folder structure
-    print("\n\nThe following .ogg files exist, but no JSON record refers to them:")
-    for i in args.path.parent.rglob("*.ogg"):
-        if i not in file_paths:
-            print(i)
+def print_file_counts(args, ogg_files):
+    w = '\033[0m'   # white (normal)
+    g = '\033[32m'  # green
+
+    # All the folders that contain ogg files
+    ogg_folders: list[Path] = list(f.relative_to(args.path.parent).parent for f in ogg_files)
+
+    # Remove my custom folder names - I fear this is hopelessly proprietary
+    adjusted_folders = []
+    for x in ogg_folders:
+        if len(x.parts) < 3:
+            adjusted_folders.append(x.parts)
+        else:
+            adjusted_folders.append(x.parts[0:3] + x.parts[-1:])
+
+    # This is fascinating, but could be misleading, due to category overlap
+    #    print("\n\n-------------------------------------------------------")
+    #    print("Json link count:\n")
+    #    for k in data:
+    #        print(k, "->", len(data[k]['sounds']))
+
+    print(g + "\n-------------------------------------------------------")
+    print("ogg file count:\n")
+
+    # File counts
+    counter: dict[tuple, int] = {}
+    for item in sorted(adjusted_folders):
+        if item not in counter:
+            counter[item] = 0
+        counter[item] += 1
+
+    for key in counter:
+        print("/".join(key), "->", counter[key])
+
+    print(f"\nTotal Sounds: {len(ogg_folders)}\n" + w)
+
+
+# Main -------------------------------------------------
+def main():
+    """
+    Main program loop
+    This function generates lists of invalid connections between json and sound files
+    """
+
+    w = '\033[0m'  # white (normal)
+    r = '\033[31m'  # red
+
+    args = handle_command_line()
+    print(f"Scanning file: {args.path}")
+
+    with open(args.path, "r") as read_file:
+        data: dict = dict(json.load(read_file))
+
+    # Minecraft Sound events
+#    sounds: list = list(data.keys())
+
+    # All file links in json
+    file_paths: list[Path] = list(get_links(data, args.path))
+
+    # All ogg files in folder structure
+    ogg_files: list[Path] = list(args.path.parent.rglob("*.ogg"))
+
+    # Show broken links
+    bad_paths = list(p for p in file_paths if not p.exists())
+    if len(bad_paths) > 0:
+        print(r + "\nThe following paths exist in JSON, but do not correspond to actual file system files:" + w)
+        for bad in bad_paths:
+            print(f".../{bad.relative_to(args.path.parent.parent)}")
+
+    # Show orphaned files
+    orphaned_files: list[Path] = [o for o in ogg_files if o not in file_paths]
+    if len(orphaned_files) > 0:
+        print(r + "\nThe following .ogg files exist, but no JSON record refers to them:" + w)
+        for orphan in orphaned_files:
+            print(f".../{orphan.relative_to(args.path.parent.parent)}")
+
+    # Show file counts
+    print_file_counts(args, ogg_files)
 
 
 # ------------------------------------------------------
