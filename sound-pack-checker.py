@@ -15,7 +15,7 @@ Command-line arguments:
     --version   (-v)    Show version number
 """
 
-__version__ = '1.3'
+__version__ = '2.0'
 __maintainer__ = "kuoxsr@gmail.com"
 __status__ = "Prototype"
 
@@ -27,13 +27,14 @@ from pathlib import Path
 from collections import Counter
 
 # Constants
-
+RED = "\033[31m"
+WHITE = "\033[0m"
 
 # ------------------------------------------------------
 # Function definitions
 # ------------------------------------------------------
 
-# handle_command_line ----------------------------------
+
 def handle_command_line():
     """
     Handle arguments supplied by the user
@@ -152,15 +153,28 @@ def print_file_counts(args, ogg_files):
     print(f"\nTotal Sounds: {len(ogg_folders)}\n" + w)
 
 
+def print_orphaned_files(args, file_paths, ogg_files):
+    orphaned_files: list[Path] = [o for o in ogg_files if o not in file_paths]
+    if len(orphaned_files) > 0:
+        print(RED + "\nThe following .ogg files exist, but no JSON record refers to them:" + WHITE)
+        for orphan in orphaned_files:
+            print(f".../{orphan.relative_to(args.path.parent.parent)}")
+
+
+def print_broken_links(args, file_paths):
+    bad_paths = list(p for p in file_paths if not p.exists())
+    if len(bad_paths) > 0:
+        print(RED + "\nThe following paths exist in JSON, but do not correspond to actual file system files:" + WHITE)
+        for bad in bad_paths:
+            print(f".../{bad.relative_to(args.path.parent.parent)}")
+
+
 # Main -------------------------------------------------
 def main():
     """
     Main program loop
     This function generates lists of invalid connections between json and sound files
     """
-
-    w = '\033[0m'  # white (normal)
-    r = '\033[31m'  # red
 
     args = handle_command_line()
     print(f"Scanning file: {args.path}")
@@ -177,19 +191,9 @@ def main():
     # All ogg files in folder structure
     ogg_files: list[Path] = list(args.path.parent.rglob("*.ogg"))
 
-    # Show broken links
-    bad_paths = list(p for p in file_paths if not p.exists())
-    if len(bad_paths) > 0:
-        print(r + "\nThe following paths exist in JSON, but do not correspond to actual file system files:" + w)
-        for bad in bad_paths:
-            print(f".../{bad.relative_to(args.path.parent.parent)}")
+    print_broken_links(args, file_paths)
 
-    # Show orphaned files
-    orphaned_files: list[Path] = [o for o in ogg_files if o not in file_paths]
-    if len(orphaned_files) > 0:
-        print(r + "\nThe following .ogg files exist, but no JSON record refers to them:" + w)
-        for orphan in orphaned_files:
-            print(f".../{orphan.relative_to(args.path.parent.parent)}")
+    print_orphaned_files(args, file_paths, ogg_files)
 
     # Show file counts
     print_file_counts(args, ogg_files)
