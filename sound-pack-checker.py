@@ -26,9 +26,6 @@ import os
 from pathlib import Path
 from collections import Counter
 
-# Constants
-RED = "\033[31m"
-WHITE = "\033[0m"
 
 # ------------------------------------------------------
 # Function definitions
@@ -39,9 +36,6 @@ def handle_command_line():
     """
     Handle arguments supplied by the user
     """
-
-    # Platform independent clearing of screen
-    os.system('cls||clear')
 
     parser = argparse.ArgumentParser(
         prog="Sound Pack Checker",
@@ -91,14 +85,22 @@ def handle_command_line():
     return args
 
 
-def get_links(json_data: dict, path: Path):
-    file_paths = []
+def get_event_dictionary(path: Path) -> dict[str, list[Path]]:
 
-    # Loop through json paths
-    for value in json_data.values():
+    with open(path, "r") as read_file:
+        json_data: dict = dict(json.load(read_file))
 
-        for sound in value['sounds']:
-            sound_path = ""
+    events: dict[str, list] = {}
+
+    for event in json_data.items():
+        # print(f"event -> {type(event)} {event}")
+        # print(f"dictionary? -> {type(event[1])} {event[1]}")
+
+        sound_paths: list[Path] = []
+        for sound in event[1]['sounds']:
+            # print(f"sound -> {sound}")
+
+            sound_path: string = ""
 
             if isinstance(sound, str):
                 sound_path = sound
@@ -109,64 +111,47 @@ def get_links(json_data: dict, path: Path):
             else:
                 print(f"I have no idea how to process this: {sound}\n")
 
-            # Append the fully qualified path to the array
             full_path = path.parent / Path("sounds") / Path(sound_path).with_suffix(".ogg")
-            file_paths.append(full_path)
+            sound_paths.append(full_path)
 
-    return file_paths
+        events[event[0]] = sound_paths
+        # print(f"\nevent: {event[0]} -> sound_paths: {sound_paths}\n")
 
-
-def print_file_counts(args, ogg_files):
-    w = '\033[0m'   # white (normal)
-    g = '\033[32m'  # green
-
-    # All the folders that contain ogg files
-    ogg_folders: list[Path] = list(f.relative_to(args.path.parent).parent for f in ogg_files)
-
-    # Remove my custom folder names - I fear this is hopelessly proprietary
-    adjusted_folders = []
-    for x in ogg_folders:
-        if len(x.parts) < 3:
-            adjusted_folders.append(x.parts)
-        else:
-            adjusted_folders.append(x.parts[0:3] + x.parts[-1:])
-
-    # This is fascinating, but could be misleading, due to category overlap
-    #    print("\n\n-------------------------------------------------------")
-    #    print("Json link count:\n")
-    #    for k in data:
-    #        print(k, "->", len(data[k]['sounds']))
-
-    print(g + "\n-------------------------------------------------------")
-    print("ogg file count:\n")
-
-    # File counts
-    counter: dict[tuple, int] = {}
-    for item in sorted(adjusted_folders):
-        if item not in counter:
-            counter[item] = 0
-        counter[item] += 1
-
-    for key in counter:
-        print("/".join(key), "->", counter[key])
-
-    print(f"\nTotal Sounds: {len(ogg_folders)}\n" + w)
+    return events
 
 
-def print_orphaned_files(args, file_paths, ogg_files):
-    orphaned_files: list[Path] = [o for o in ogg_files if o not in file_paths]
-    if len(orphaned_files) > 0:
-        print(RED + "\nThe following .ogg files exist, but no JSON record refers to them:" + WHITE)
-        for orphan in orphaned_files:
-            print(f".../{orphan.relative_to(args.path.parent.parent)}")
+def get_orphaned_files(events: dict[str, list[Path]], ogg_files: list[Path]) -> list[Path]:
+
+    orphaned_files: list[Path] = []
+    # print(f"\nevents.values() -> {len(events.values())} {events.values()}\n")
+
+    sounds: list[Path] = []
+    for sound in events.values():
+        sounds.extend(sound)
+
+    # print(f"\nsounds() -> {len(sounds)} {sounds}")
+    # print(f"\nogg_files: {len(ogg_files)} {ogg_files}\n")
+
+    links: list[Path] = list(set([lnk.resolve() for lnk in ogg_files if lnk.is_symlink()]))
+    # print(f"\nlinks: {len(links)} {links}\n")
+
+    orphans: list[Path] = [o for o in ogg_files if o not in sounds and o not in links]
+    if len(orphans) > 0:
+        orphaned_files.extend(orphans)
+
+    return orphaned_files
 
 
-def print_broken_links(args, file_paths):
-    bad_paths = list(p for p in file_paths if not p.exists())
-    if len(bad_paths) > 0:
-        print(RED + "\nThe following paths exist in JSON, but do not correspond to actual file system files:" + WHITE)
-        for bad in bad_paths:
-            print(f".../{bad.relative_to(args.path.parent.parent)}")
+def get_broken_links(events: dict[str, list[Path]]) -> list[Path]:
+
+    broken_links: list[Path] = []
+    for event in events.values():
+
+        bad_path = list(p for p in event if not p.exists())
+        if len(bad_path) > 0:
+            broken_links.extend(bad_path)
+
+    return broken_links
 
 
 # Main -------------------------------------------------
@@ -176,27 +161,55 @@ def main():
     This function generates lists of invalid connections between json and sound files
     """
 
+    green = "\033[32m"
+    red = "\033[31m"
+    white = "\033[0m"
+
+    # Platform independent clearing of screen
+    os.system('cls||clear')
+
     args = handle_command_line()
     print(f"Scanning file: {args.path}")
 
-    with open(args.path, "r") as read_file:
-        data: dict = dict(json.load(read_file))
-
-    # Minecraft Sound events
-#    sounds: list = list(data.keys())
-
-    # All file links in json
-    file_paths: list[Path] = list(get_links(data, args.path))
+    events: dict[str, list] = get_event_dictionary(args.path)
+    # print("\n===============================")
+    # print(f"events: {events}")
+    # print("===============================")
 
     # All ogg files in folder structure
     ogg_files: list[Path] = list(args.path.parent.rglob("*.ogg"))
+    # print("\nAll ogg files in folder structure:")
+    # temp_ogg_files = [print(e) for e in ogg_files]
+    # print()
 
-    print_broken_links(args, file_paths)
+    assets_folder: Path = args.path.parent.parent
 
-    print_orphaned_files(args, file_paths, ogg_files)
+    broken_links: list[Path] = get_broken_links(events)
+    if len(broken_links) > 0:
+        print(red + "\nThe following paths exist in JSON, but do not correspond to actual file system files:" + white)
+        temp = [print(f".../{a.relative_to(assets_folder)}") for a in broken_links]
 
-    # Show file counts
-    print_file_counts(args, ogg_files)
+    orphaned_files: list[Path] = get_orphaned_files(events, ogg_files)
+    if len(orphaned_files) > 0:
+        print(red + "\nThe following .ogg files exist, but no JSON record refers to them:" + white)
+        temp = [print(f".../{b.relative_to(assets_folder)}") for b in orphaned_files]
+
+    print(green + "\n-------------------------------------------------------")
+    print("Sound count:\n")
+
+    count: int = 0
+    for key in events:
+
+        paths: list[Path] = [pth for pth in events[key] if not pth.is_symlink()]
+        links: list[Path] = list(set([lnk.resolve() for lnk in events[key] if lnk.is_symlink()]))
+        paths.extend(links)
+
+        c = len(paths)
+        print(f"{key} -> {c}")
+        count += c
+
+    print(f"\nTotal sounds: {count}")
+    print("-------------------------------------------------------" + white)
 
 
 # ------------------------------------------------------
