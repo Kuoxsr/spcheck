@@ -15,7 +15,7 @@ Command-line arguments:
     --version   (-v)    Show version number
 """
 
-__version__ = '2.2'
+__version__ = '2.3'
 __maintainer__ = "kuoxsr@gmail.com"
 __status__ = "Prototype"
 
@@ -79,7 +79,7 @@ def handle_command_line():
         exit()
 
     # Finally, make the argument a Path  (does this work?)
-    args.path = Path(args.path)
+    args.path = Path(args.path).resolve()
 
 #    print("args:",args); exit()
     return args
