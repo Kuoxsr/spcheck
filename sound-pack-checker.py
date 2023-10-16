@@ -15,7 +15,7 @@ Command-line arguments:
     --version   (-v)    Show version number
 """
 
-__version__ = '2.0'
+__version__ = '2.1'
 __maintainer__ = "kuoxsr@gmail.com"
 __status__ = "Prototype"
 
@@ -205,8 +205,10 @@ def main():
         paths.extend(links)
 
         c = len(paths)
-        print(f"{key} -> {c}")
-        count += c
+
+        if c > 0:
+            print(f"{key} -> {c}")
+            count += c
 
     print(f"\nTotal sounds: {count}")
     print("-------------------------------------------------------" + white)
