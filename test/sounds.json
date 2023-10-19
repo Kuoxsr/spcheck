@@ -1,0 +1,30 @@
+{
+    "entity.creeper.death": {
+        "sounds": [
+            "mob/creeper/death",
+            {"name":"mob/creeper/death1", "volume":0.5},
+            "mob/creeper/this-should-be-a-bad-link"
+        ],
+        "subtitle": "subtitles.entity.creeper.death"
+    },
+    "entity.villager.ambient": {
+        "sounds": [
+            {"name":"mob/villager/idle1", "volume":0.5},
+            {"name":"mob/villager/non-symlink-sucess", "volume":0.6},
+            {"name":"mob/villager/idle2", "volume":0.8},
+            "mob/villager/idle3",
+            "mob/villager/this-should-be-a-bad-link"
+        ],
+        "subtitle": "subtitles.entity.villager.ambient"
+    },
+    "entity.witch.celebrate": {
+        "replace":true,
+        "sounds": [
+            "entity/witch/ambient1",
+            "entity/witch/ambient4",
+            "entity/witch/celebrate"
+        ],
+        "subtitle": "subtitles.entity.witch.celebrate"
+    }
+}
+

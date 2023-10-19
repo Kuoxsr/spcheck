@@ -15,7 +15,7 @@ Command-line arguments:
     --version   (-v)    Show version number
 """
 
-__version__ = '2.3'
+__version__ = '2.4'
 __maintainer__ = "kuoxsr@gmail.com"
 __status__ = "Prototype"
 
@@ -144,12 +144,23 @@ def get_orphaned_files(events: dict[str, list[Path]], ogg_files: list[Path]) -> 
 
 def get_broken_links(events: dict[str, list[Path]]) -> list[Path]:
 
-    broken_links: list[Path] = []
-    for event in events.values():
+    vanilla_events = get_event_dictionary(Path("./vanilla-sounds.json").resolve())
 
-        bad_path = list(p for p in event if not p.exists())
-        if len(bad_path) > 0:
-            broken_links.extend(bad_path)
+    broken_links: list[Path] = []
+    for event, sounds in events.items():
+        # print(f"event: {event}")
+        # print(f"sounds-> {sounds}")
+
+        vanilla_sounds = vanilla_events[event]
+        # print(f"vanilla_sounds: {vanilla_sounds}")
+
+        bad_paths = list(p for p in sounds if not p.exists())
+
+        for pth in bad_paths:
+            # print(f"pth: {pth.name}")
+
+            if pth.name not in list(v.name for v in vanilla_sounds):
+                broken_links.append(pth)
 
     return broken_links
 
