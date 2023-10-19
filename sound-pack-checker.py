@@ -15,7 +15,7 @@ Command-line arguments:
     --version   (-v)    Show version number
 """
 
-__version__ = '2.4'
+__version__ = '2.5'
 __maintainer__ = "kuoxsr@gmail.com"
 __status__ = "Prototype"
 
@@ -158,6 +158,10 @@ def get_broken_links(events: dict[str, list[Path]]) -> list[Path]:
 
         for pth in bad_paths:
             # print(f"pth: {pth.name}")
+
+            if pth.is_symlink():
+                broken_links.append(pth)
+                continue
 
             if pth.name not in list(v.name for v in vanilla_sounds):
                 broken_links.append(pth)
