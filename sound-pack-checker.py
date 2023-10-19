@@ -15,7 +15,7 @@ Command-line arguments:
     --version   (-v)    Show version number
 """
 
-__version__ = '2.5'
+__version__ = '2.6'
 __maintainer__ = "kuoxsr@gmail.com"
 __status__ = "Prototype"
 
@@ -144,7 +144,10 @@ def get_orphaned_files(events: dict[str, list[Path]], ogg_files: list[Path]) -> 
 
 def get_broken_links(events: dict[str, list[Path]]) -> list[Path]:
 
-    vanilla_events = get_event_dictionary(Path("./vanilla-sounds.json").resolve())
+    script_home_path: Path = Path(__file__).absolute().resolve().parent
+    # print(f"script_home_path: {script_home_path}")
+
+    vanilla_events = get_event_dictionary(script_home_path / Path("vanilla-sounds.json"))
 
     broken_links: list[Path] = []
     for event, sounds in events.items():
