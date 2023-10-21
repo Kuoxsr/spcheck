@@ -90,6 +90,9 @@ def get_event_dictionary(path: Path) -> dict[str, list[Path]]:
     with open(path, "r") as read_file:
         json_data: dict = dict(json.load(read_file))
 
+    parent_path: Path = path.parent.parent
+    # print(f"parent_path: {parent_path}")
+
     events: dict[str, list] = {}
 
     for event in json_data.items():
@@ -101,6 +104,7 @@ def get_event_dictionary(path: Path) -> dict[str, list[Path]]:
             # print(f"sound -> {sound}")
 
             sound_path: string = ""
+            namespace: string = "minecraft"
 
             if isinstance(sound, str):
                 sound_path = sound
@@ -111,7 +115,12 @@ def get_event_dictionary(path: Path) -> dict[str, list[Path]]:
             else:
                 print(f"I have no idea how to process this: {sound}\n")
 
-            full_path = path.parent / Path("sounds") / Path(sound_path).with_suffix(".ogg")
+            if ":" in sound_path:
+                sound_path_parts = sound_path.split(":")
+                namespace = Path(sound_path_parts[0])
+                sound_path = Path(sound_path_parts[1])
+
+            full_path = parent_path / namespace / Path("sounds") / Path(sound_path).with_suffix(".ogg")
             sound_paths.append(full_path)
 
         events[event[0]] = sound_paths

@@ -10,8 +10,8 @@
     "entity.villager.ambient": {
         "sounds": [
             {"name":"mob/villager/idle1", "volume":0.5},
-            {"name":"mob/villager/non-symlink-sucess", "volume":0.6},
-            {"name":"mob/villager/idle2", "volume":0.8},
+            {"name":"mob/villager/non-symlink-success", "volume":0.6},
+            {"name":"mob/villager/invalid-symlink", "volume":0.8},
             "mob/villager/idle3",
             "mob/villager/this-should-be-a-bad-link"
         ],
@@ -29,9 +29,9 @@
      "entity.witch.throw": {
          "sounds": [
              "custom-namespace:custom-category/custom-category-success",
-             "custom-namespace:custom-category/custom-category-dead-link",
+             "custom-namespace:custom-category/custom-category-broken-link",
              "custom-namespace:custom-namespace-success",
-             "custom-namespace:custom-namespace-dead-link"
+             "custom-namespace:custom-namespace-broken-link"
          ]
      }
 }
