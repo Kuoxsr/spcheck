@@ -15,7 +15,7 @@ Command-line arguments:
     --version   (-v)    Show version number
 """
 
-__version__ = '2.6'
+__version__ = '2.7'
 __maintainer__ = "kuoxsr@gmail.com"
 __status__ = "Prototype"
 
@@ -23,6 +23,7 @@ __status__ = "Prototype"
 import argparse
 import json
 import os
+import sys
 from pathlib import Path
 from collections import Counter
 
@@ -90,43 +91,40 @@ def get_event_dictionary(path: Path) -> dict[str, list[Path]]:
     with open(path, "r") as read_file:
         json_data: dict = dict(json.load(read_file))
 
-    parent_path: Path = path.parent.parent
-    # print(f"parent_path: {parent_path}")
-
     events: dict[str, list] = {}
 
     for event in json_data.items():
-        # print(f"event -> {type(event)} {event}")
-        # print(f"dictionary? -> {type(event[1])} {event[1]}")
 
         sound_paths: list[Path] = []
         for sound in event[1]['sounds']:
-            # print(f"sound -> {sound}")
-
-            sound_path: string = ""
-            namespace: string = "minecraft"
-
-            if isinstance(sound, str):
-                sound_path = sound
-
-            elif isinstance(sound, dict):
-                sound_path = sound['name']
-
-            else:
-                print(f"I have no idea how to process this: {sound}\n")
-
-            if ":" in sound_path:
-                sound_path_parts = sound_path.split(":")
-                namespace = Path(sound_path_parts[0])
-                sound_path = Path(sound_path_parts[1])
-
-            full_path = parent_path / namespace / Path("sounds") / Path(sound_path).with_suffix(".ogg")
-            sound_paths.append(full_path)
+            sound_paths.append(get_sound_path(path, sound))
 
         events[event[0]] = sound_paths
-        # print(f"\nevent: {event[0]} -> sound_paths: {sound_paths}\n")
 
     return events
+
+
+def get_sound_path(path: Path, sound: str) -> Path:
+
+    sound_path: str = ""
+
+    if isinstance(sound, str):
+        sound_path = sound
+
+    elif isinstance(sound, dict):
+        sound_path = sound['name']
+
+    else:
+        sys.exit(f"\nI have no idea how to process this: {sound}\n")
+
+    namespace: str = "minecraft"
+
+    if ":" in sound_path:
+        parts = sound_path.split(":")
+        namespace = Path(parts[0])
+        sound_path = Path(parts[1])
+
+    return path.parent.parent / namespace / Path("sounds") / Path(sound_path).with_suffix(".ogg")
 
 
 def get_orphaned_files(events: dict[str, list[Path]], ogg_files: list[Path]) -> list[Path]:
