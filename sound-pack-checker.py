@@ -202,7 +202,7 @@ def main():
     # print("===============================")
 
     # All ogg files in folder structure
-    ogg_files: list[Path] = list(args.path.parent.rglob("*.ogg"))
+    ogg_files: list[Path] = list(args.path.parent.parent.rglob("*.ogg"))
     # print("\nAll ogg files in folder structure:")
     # temp_ogg_files = [print(e) for e in ogg_files]
     # print()
