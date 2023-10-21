@@ -25,6 +25,14 @@
             "entity/witch/celebrate"
         ],
         "subtitle": "subtitles.entity.witch.celebrate"
-    }
+    },
+     "entity.witch.throw": {
+         "sounds": [
+             "custom-namespace:custom-category/custom-category-success",
+             "custom-namespace:custom-category/custom-category-dead-link",
+             "custom-namespace:custom-namespace-success",
+             "custom-namespace:custom-namespace-dead-link"
+         ]
+     }
 }
 
