@@ -15,7 +15,7 @@ Command-line arguments:
     --version   (-v)    Show version number
 """
 
-__version__ = '2.7'
+__version__ = '2.8'
 __maintainer__ = "kuoxsr@gmail.com"
 __status__ = "Prototype"
 
@@ -224,9 +224,8 @@ def main():
 
     count: int = 0
     for key in events:
-
-        paths: list[Path] = [pth for pth in events[key] if not pth.is_symlink() and pth.exists()]
-        links: list[Path] = list(set([lnk.resolve() for lnk in events[key] if lnk.is_symlink()]))
+        paths = [pth for pth in events[key] if not pth.is_symlink() and pth.exists()]
+        links = list(set([lnk.resolve() for lnk in events[key] if lnk.is_symlink() and lnk.resolve().exists()]))
         paths.extend(links)
 
         c = len(paths)
