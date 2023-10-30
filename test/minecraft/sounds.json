@@ -31,7 +31,8 @@
              "custom-namespace:custom-category/custom-category-success",
              "custom-namespace:custom-category/custom-category-broken-link",
              "custom-namespace:custom-namespace-success",
-             "custom-namespace:custom-namespace-broken-link"
+             "custom-namespace:custom-namespace-broken-link",
+             "custom-namespace:invalid-CASE-in-json"
          ]
      }
 }

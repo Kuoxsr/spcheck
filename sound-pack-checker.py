@@ -15,7 +15,7 @@ Command-line arguments:
     --version   (-v)    Show version number
 """
 
-__version__ = '2.8'
+__version__ = '2.9'
 __maintainer__ = "kuoxsr@gmail.com"
 __status__ = "Prototype"
 
@@ -23,6 +23,7 @@ __status__ = "Prototype"
 import argparse
 import json
 import os
+import re
 import sys
 from pathlib import Path
 from collections import Counter
@@ -127,6 +128,23 @@ def get_sound_path(path: Path, sound: str) -> Path:
     return path.parent.parent / namespace / Path("sounds") / Path(sound_path).with_suffix(".ogg")
 
 
+def get_invalid_file_names(events: dict[str, list[Path]]) -> list[Path]:
+
+    bad_names: list[Path] = []
+    pattern = re.compile("^[a-z0-9/._-]+$")
+
+    for value in events.values():
+
+        for sound in value:
+            # print(f"sound: {sound}")
+
+            # Check for "invalid" characters
+            if not pattern.match(str(sound)):
+                bad_names.append(sound)
+
+    return bad_names
+
+
 def get_orphaned_files(events: dict[str, list[Path]], ogg_files: list[Path]) -> list[Path]:
 
     orphaned_files: list[Path] = []
@@ -208,6 +226,11 @@ def main():
     # print()
 
     assets_folder: Path = args.path.parent.parent
+
+    invalid_file_names: list = get_invalid_file_names(events)
+    if len(invalid_file_names) > 0:
+        print(red + "\nThe following file names violate Mojang's new constraints:" + white)
+        temp = [print(f" .../{i.relative_to(assets_folder)}") for i in invalid_file_names]
 
     broken_links: list[Path] = get_broken_links(events)
     if len(broken_links) > 0:
