@@ -206,13 +206,16 @@ def main():
 
     green = "\033[32m"
     red = "\033[31m"
-    white = "\033[0m"
+    yellow = "\033[33m"
+    white = "\033[97m"
+    bold = "\033[1m"
+    default = "\033[0m"
 
     # Platform independent clearing of screen
     os.system('cls||clear')
 
     args = handle_command_line()
-    print(f"Scanning file: {args.path}")
+    print(f"{bold}{white}Scanning file:\n{default}{yellow}{args.path}")
 
     events: dict[str, list] = get_event_dictionary(args.path)
     # print("\n===============================")
@@ -229,20 +232,20 @@ def main():
 
     invalid_file_names: list = get_invalid_file_names(events)
     if len(invalid_file_names) > 0:
-        print(red + "\nThe following file names violate Mojang's new constraints:" + white)
+        print(f"{red}\nThe following file names violate Mojang's new constraints:{default}")
         temp = [print(f" .../{i.relative_to(assets_folder)}") for i in invalid_file_names]
 
     broken_links: list[Path] = get_broken_links(events)
     if len(broken_links) > 0:
-        print(red + "\nThe following paths exist in JSON, but do not correspond to actual file system files:" + white)
+        print(f"{red}\nThe following paths exist in JSON, but do not correspond to actual file system files:{default}")
         temp = [print(f".../{a.relative_to(assets_folder)}") for a in broken_links]
 
     orphaned_files: list[Path] = get_orphaned_files(events, ogg_files)
     if len(orphaned_files) > 0:
-        print(red + "\nThe following .ogg files exist, but no JSON record refers to them:" + white)
+        print(f"{red}\nThe following .ogg files exist, but no JSON record refers to them:{default}")
         temp = [print(f".../{b.relative_to(assets_folder)}") for b in orphaned_files]
 
-    print(green + "\n-------------------------------------------------------")
+    print(f"{green}\n-------------------------------------------------------")
     print("Sound count:\n")
 
     count: int = 0
@@ -258,7 +261,7 @@ def main():
             count += c
 
     print(f"\nTotal sounds: {count}")
-    print("-------------------------------------------------------" + white)
+    print(f"-------------------------------------------------------{default}")
 
 
 # ------------------------------------------------------
