@@ -15,7 +15,7 @@ Command-line arguments:
     --version   (-v)    Show version number
 """
 
-__version__ = '2.9'
+__version__ = '2.10'
 __maintainer__ = "kuoxsr@gmail.com"
 __status__ = "Prototype"
 
@@ -53,38 +53,43 @@ def handle_command_line():
 
     args = parser.parse_args()
 
-    # path is a LIST at this point, and we want just a string
-    if len(args.path) > 0:
-        args.path = args.path[0]
-    else:
-        args.path = ""
+    args.path = get_real_path(args.path)
+
+#    print("args:",args); exit()
+    return args
+
+
+def get_real_path(args_path: list[str]) -> Path:
+
+    input: Path = args_path[0] if (len(args_path) > 0) else ""
 
     # Has the user specified a path at all?
-    if not args.path:
+    if not input:
         print("Path to sounds.json is required.")
-        exit()
+        exit(1)
 
-    path = Path(args.path)
+    path: Path = Path(input)
 
     # Does path folder exist on the file system?
     if not path.exists():
         print(f"Specified path not found. {path} is not a valid filesystem path.")
-        exit()
+        exit(1)
 
-    # Has the user specified the wrong file name?
-    if path.name != "sounds.json":
-        args.path += "sounds.json"
+    # Does the path refer only to a folder?  Assume sounds.json
+    if path.is_dir():
+        path = path / "sounds.json"
+
+    # Has the user specified the wrong file extension?
+    if path.suffix != ".json":
+        print(f"specified file: {path} is not a JSON file")
+        exit(1)
 
     # Does sounds.json exist, now that we've added it for them (if necessary?)
-    if not Path(args.path).exists():
+    if not Path(path).exists():
         print("sounds.json not found.")
-        exit()
+        exit(1)
 
-    # Finally, make the argument a Path  (does this work?)
-    args.path = Path(args.path).resolve()
-
-#    print("args:",args); exit()
-    return args
+    return Path(path).resolve()
 
 
 def get_event_dictionary(path: Path) -> dict[str, list[Path]]:
@@ -179,8 +184,9 @@ def get_broken_links(events: dict[str, list[Path]]) -> list[Path]:
         # print(f"event: {event}")
         # print(f"sounds-> {sounds}")
 
-        vanilla_sounds = vanilla_events[event]
-        # print(f"vanilla_sounds: {vanilla_sounds}")
+        if event in vanilla_events.keys():
+            vanilla_sounds = vanilla_events[event]
+            # print(f"vanilla_sounds: {vanilla_sounds}")
 
         bad_paths = list(p for p in sounds if not p.exists())
 
