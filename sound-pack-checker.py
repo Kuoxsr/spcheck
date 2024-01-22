@@ -15,7 +15,7 @@ Command-line arguments:
     --version   (-v)    Show version number
 """
 
-__version__ = '2.10'
+__version__ = '2.11'
 __maintainer__ = "kuoxsr@gmail.com"
 __status__ = "Prototype"
 
@@ -203,6 +203,18 @@ def get_broken_links(events: dict[str, list[Path]]) -> list[Path]:
     return broken_links
 
 
+def get_alien_files(path: Path) -> list[Path]:
+    """
+    Generates a list of files under the specified path that are not .ogg files
+    :param path: The path from which to begin the search
+    :return: A list of paths to files that shouldn't be in this folder structure
+    """
+    all = path.glob('**/*')
+    alien_files: list[Path] = [f for f in all if f.is_file() and f.suffix not in (".ogg", ".json")]
+
+    return sorted(alien_files)
+
+
 # Main -------------------------------------------------
 def main():
     """
@@ -250,6 +262,11 @@ def main():
     if len(orphaned_files) > 0:
         print(f"{red}\nThe following .ogg files exist, but no JSON record refers to them:{default}")
         temp = [print(f".../{b.relative_to(assets_folder)}") for b in orphaned_files]
+
+    alien_files: list[Path] = get_alien_files(assets_folder)
+    if len(alien_files) > 0:
+        print(f"{red}\nThe following files are not .ogg files, but are in the sound folders anyway:{default}")
+        temp = [print(f" .../{x.relative_to(assets_folder)}") for x in alien_files]
 
     print(f"{green}\n-------------------------------------------------------")
     print("Sound count:\n")
