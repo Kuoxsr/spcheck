@@ -15,7 +15,7 @@ Command-line arguments:
     --version   (-v)    Show version number
 """
 
-__version__ = '2.11'
+__version__ = '2.12'
 __maintainer__ = "kuoxsr@gmail.com"
 __status__ = "Prototype"
 
@@ -130,7 +130,9 @@ def get_sound_path(path: Path, sound: str) -> Path:
         namespace = Path(parts[0])
         sound_path = Path(parts[1])
 
-    return path.parent.parent / namespace / Path("sounds") / Path(sound_path).with_suffix(".ogg")
+    new_path: str = str(sound_path) + ".ogg"
+    temp = path.parent.parent / namespace / "sounds" / new_path
+    return temp
 
 
 def get_invalid_file_names(events: dict[str, list[Path]]) -> list[Path]:
