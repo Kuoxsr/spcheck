@@ -15,7 +15,7 @@ Command-line arguments:
     --version   (-v)    Show version number
 """
 
-__version__ = '2.12'
+__version__ = '2.13'
 __maintainer__ = "kuoxsr@gmail.com"
 __status__ = "Prototype"
 
@@ -55,7 +55,6 @@ def handle_command_line():
 
     args.path = get_real_path(args.path)
 
-#    print("args:",args); exit()
     return args
 
 
@@ -143,7 +142,6 @@ def get_invalid_file_names(events: dict[str, list[Path]]) -> list[Path]:
     for value in events.values():
 
         for sound in value:
-            # print(f"sound: {sound}")
 
             # Check for "invalid" characters
             if not pattern.match(str(sound)):
@@ -155,17 +153,12 @@ def get_invalid_file_names(events: dict[str, list[Path]]) -> list[Path]:
 def get_orphaned_files(events: dict[str, list[Path]], ogg_files: list[Path]) -> list[Path]:
 
     orphaned_files: list[Path] = []
-    # print(f"\nevents.values() -> {len(events.values())} {events.values()}\n")
 
     sounds: list[Path] = []
     for sound in events.values():
         sounds.extend(sound)
 
-    # print(f"\nsounds() -> {len(sounds)} {sounds}")
-    # print(f"\nogg_files: {len(ogg_files)} {ogg_files}\n")
-
     links: list[Path] = list(set([lnk.resolve() for lnk in ogg_files if lnk.is_symlink()]))
-    # print(f"\nlinks: {len(links)} {links}\n")
 
     orphans: list[Path] = [o for o in ogg_files if o not in sounds and o not in links]
     if len(orphans) > 0:
@@ -177,23 +170,18 @@ def get_orphaned_files(events: dict[str, list[Path]], ogg_files: list[Path]) -> 
 def get_broken_links(events: dict[str, list[Path]]) -> list[Path]:
 
     script_home_path: Path = Path(__file__).absolute().resolve().parent
-    # print(f"script_home_path: {script_home_path}")
 
     vanilla_events = get_event_dictionary(script_home_path / Path("vanilla-sounds.json"))
 
     broken_links: list[Path] = []
     for event, sounds in events.items():
-        # print(f"event: {event}")
-        # print(f"sounds-> {sounds}")
 
         if event in vanilla_events.keys():
             vanilla_sounds = vanilla_events[event]
-            # print(f"vanilla_sounds: {vanilla_sounds}")
 
         bad_paths = list(p for p in sounds if not p.exists())
 
         for pth in bad_paths:
-            # print(f"pth: {pth.name}")
 
             if pth.is_symlink():
                 broken_links.append(pth)
@@ -235,18 +223,14 @@ def main():
     os.system('cls||clear')
 
     args = handle_command_line()
+
     print(f"{bold}{white}Scanning file:\n{default}{yellow}{args.path}")
 
+    # All sound event records in sounds.json
     events: dict[str, list] = get_event_dictionary(args.path)
-    # print("\n===============================")
-    # print(f"events: {events}")
-    # print("===============================")
 
     # All ogg files in folder structure
     ogg_files: list[Path] = list(args.path.parent.parent.rglob("*.ogg"))
-    # print("\nAll ogg files in folder structure:")
-    # temp_ogg_files = [print(e) for e in ogg_files]
-    # print()
 
     assets_folder: Path = args.path.parent.parent
 
