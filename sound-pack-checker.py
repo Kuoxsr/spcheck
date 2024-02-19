@@ -25,6 +25,7 @@ import json
 import os
 import re
 import sys
+
 from pathlib import Path
 from collections import Counter
 
@@ -41,15 +42,22 @@ def handle_command_line():
 
     parser = argparse.ArgumentParser(
         prog="Sound Pack Checker",
-        description="generates lists of invalid connections between json and sound files.")
+        description=("generates lists of invalid connections "
+                     "between json and sound files."))
 
-    parser.add_argument("-v", "--version", action="version", version="%(prog)s version " + __version__)
+    parser.add_argument(
+            "-v", 
+            "--version", 
+            action="version", 
+            version="%(prog)s version " + __version__)
 
     parser.add_argument(
         "path",
         action="store",
         nargs=argparse.REMAINDER,
-        help="Path to the sounds.json file you want to check.  The file name itself is not required.")
+        help=(
+            "Path to the sounds.json file you want to check.  "
+            "The file name itself is not required."))
 
     args = parser.parse_args()
 
@@ -71,7 +79,9 @@ def get_real_path(args_path: list[str]) -> Path:
 
     # Does path folder exist on the file system?
     if not path.exists():
-        print(f"Specified path not found. {path} is not a valid filesystem path.")
+        print(
+            f"Specified path not found. "
+            f"{path} is not a valid filesystem path.")
         exit(1)
 
     # Does the path refer only to a folder?  Assume sounds.json
@@ -83,7 +93,7 @@ def get_real_path(args_path: list[str]) -> Path:
         print(f"specified file: {path} is not a JSON file")
         exit(1)
 
-    # Does sounds.json exist, now that we've added it for them (if necessary?)
+    # Does sounds.json exist, now that we've added it for them
     if not Path(path).exists():
         print("sounds.json not found.")
         exit(1)
@@ -150,7 +160,9 @@ def get_invalid_file_names(events: dict[str, list[Path]]) -> list[Path]:
     return bad_names
 
 
-def get_orphaned_files(events: dict[str, list[Path]], ogg_files: list[Path]) -> list[Path]:
+def get_orphaned_files(
+           events: dict[str, list[Path]], 
+           ogg_files: list[Path]) -> list[Path]:
 
     orphaned_files: list[Path] = []
 
@@ -158,9 +170,12 @@ def get_orphaned_files(events: dict[str, list[Path]], ogg_files: list[Path]) -> 
     for sound in events.values():
         sounds.extend(sound)
 
-    links: list[Path] = list(set([lnk.resolve() for lnk in ogg_files if lnk.is_symlink()]))
+    links: list[Path] = list(
+        set([lnk.resolve() for lnk in ogg_files if lnk.is_symlink()]))
 
-    orphans: list[Path] = [o for o in ogg_files if o not in sounds and o not in links]
+    orphans: list[Path] = [
+        o for o in ogg_files if o not in sounds and o not in links]
+
     if len(orphans) > 0:
         orphaned_files.extend(orphans)
 
@@ -171,7 +186,8 @@ def get_broken_links(events: dict[str, list[Path]]) -> list[Path]:
 
     script_home_path: Path = Path(__file__).absolute().resolve().parent
 
-    vanilla_events = get_event_dictionary(script_home_path / Path("vanilla-sounds.json"))
+    vanilla_events = get_event_dictionary(
+        script_home_path / Path("vanilla-sounds.json"))
 
     broken_links: list[Path] = []
     for event, sounds in events.items():
@@ -195,12 +211,15 @@ def get_broken_links(events: dict[str, list[Path]]) -> list[Path]:
 
 def get_alien_files(path: Path) -> list[Path]:
     """
-    Generates a list of files under the specified path that are not .ogg files
+    Generates a list of files under the specified path 
+    that are not .ogg files
     :param path: The path from which to begin the search
-    :return: A list of paths to files that shouldn't be in this folder structure
+    :return: A list of paths to files that shouldn't be 
+    in this folder structure
     """
     all = path.glob('**/*')
-    alien_files: list[Path] = [f for f in all if f.is_file() and f.suffix not in (".ogg", ".json")]
+    alien_files: list[Path] = [
+        f for f in all if f.is_file() and f.suffix not in (".ogg", ".json")]
 
     return sorted(alien_files)
 
@@ -209,7 +228,8 @@ def get_alien_files(path: Path) -> list[Path]:
 def main():
     """
     Main program loop
-    This function generates lists of invalid connections between json and sound files
+    This function generates lists of invalid connections 
+    between json and sound files
     """
 
     green = "\033[32m"
@@ -236,31 +256,57 @@ def main():
 
     invalid_file_names: list = get_invalid_file_names(events)
     if len(invalid_file_names) > 0:
-        print(f"{red}\nThe following file names violate Mojang's new constraints:{default}")
-        temp = [print(f" .../{i.relative_to(assets_folder)}") for i in invalid_file_names]
+        print(
+            f"{red}\nThe following file names violate "
+            f"Mojang's new constraints:{default}")
+
+        temp = [
+            print(f" .../{i.relative_to(assets_folder)}") 
+            for i in invalid_file_names]
 
     broken_links: list[Path] = get_broken_links(events)
     if len(broken_links) > 0:
-        print(f"{red}\nThe following paths exist in JSON, but do not correspond to actual file system files:{default}")
-        temp = [print(f".../{a.relative_to(assets_folder)}") for a in broken_links]
+        print(
+            f"{red}\nThe following paths exist in JSON, "
+            f"but do not correspond to actual file system files:{default}")
+
+        temp = [
+            print(f".../{a.relative_to(assets_folder)}") 
+            for a in broken_links
+        ]
 
     orphaned_files: list[Path] = get_orphaned_files(events, ogg_files)
     if len(orphaned_files) > 0:
-        print(f"{red}\nThe following .ogg files exist, but no JSON record refers to them:{default}")
-        temp = [print(f".../{b.relative_to(assets_folder)}") for b in orphaned_files]
+        print(
+            f"{red}\nThe following .ogg files exist, "
+            f"but no JSON record refers to them:{default}")
+
+        temp = [
+            print(f".../{b.relative_to(assets_folder)}") 
+            for b in orphaned_files]
 
     alien_files: list[Path] = get_alien_files(assets_folder)
     if len(alien_files) > 0:
-        print(f"{red}\nThe following files are not .ogg files, but are in the sound folders anyway:{default}")
-        temp = [print(f" .../{x.relative_to(assets_folder)}") for x in alien_files]
+        print(
+            f"{red}\nThe following files are not .ogg files, "
+            f"but are in the sound folders anyway:{default}")
+
+        temp = [
+            print(f" .../{x.relative_to(assets_folder)}") 
+            for x in alien_files]
 
     print(f"{green}\n-------------------------------------------------------")
     print("Sound count:\n")
 
     count: int = 0
     for key in events:
-        paths = [pth for pth in events[key] if not pth.is_symlink() and pth.exists()]
-        links = list(set([lnk.resolve() for lnk in events[key] if lnk.is_symlink() and lnk.resolve().exists()]))
+        paths = [
+            pth for pth in events[key] if not pth.is_symlink() and pth.exists()
+        ]
+        links = list(set([
+                lnk.resolve() for lnk in events[key] 
+                if lnk.is_symlink() and lnk.resolve().exists()
+            ]))
         paths.extend(links)
 
         c = len(paths)
