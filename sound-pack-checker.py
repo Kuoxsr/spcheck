@@ -26,8 +26,19 @@ import os
 import re
 import sys
 
+from enum import Enum
 from pathlib import Path
 from collections import Counter
+
+
+class Color(str, Enum):
+ 
+    green = "\033[32m"
+    red = "\033[31m"
+    yellow = "\033[33m"
+    white = "\033[97m"
+    bold = "\033[1m"
+    default = "\033[0m"
 
 
 # ------------------------------------------------------
@@ -224,6 +235,16 @@ def get_alien_files(path: Path) -> list[Path]:
     return sorted(alien_files)
 
 
+def print_warnings(message: str, files: list[Path], assets_folder: Path):
+
+    if len(files) == 0:
+        return
+
+    print(f"{Color.red.value}\n{message}{Color.default.value}")
+    temp = [print(f" .../{f.relative_to(assets_folder)}") for f in files]
+
+
+
 # Main -------------------------------------------------
 def main():
     """
@@ -232,19 +253,15 @@ def main():
     between json and sound files
     """
 
-    green = "\033[32m"
-    red = "\033[31m"
-    yellow = "\033[33m"
-    white = "\033[97m"
-    bold = "\033[1m"
-    default = "\033[0m"
-
     # Platform independent clearing of screen
     os.system('cls||clear')
 
     args = handle_command_line()
 
-    print(f"{bold}{white}Scanning file:\n{default}{yellow}{args.path}")
+    print(
+        f"{Color.bold.value}{Color.white.value}"
+        f"Scanning file:\n{Color.default.value}"
+        f"{Color.yellow.value}{args.path}")
 
     # All sound event records in sounds.json
     events: dict[str, list] = get_event_dictionary(args.path)
@@ -255,48 +272,36 @@ def main():
     assets_folder: Path = args.path.parent.parent
 
     invalid_file_names: list = get_invalid_file_names(events)
-    if len(invalid_file_names) > 0:
-        print(
-            f"{red}\nThe following file names violate "
-            f"Mojang's new constraints:{default}")
-
-        temp = [
-            print(f" .../{i.relative_to(assets_folder)}") 
-            for i in invalid_file_names]
-
     broken_links: list[Path] = get_broken_links(events)
-    if len(broken_links) > 0:
-        print(
-            f"{red}\nThe following paths exist in JSON, "
-            f"but do not correspond to actual file system files:{default}")
-
-        temp = [
-            print(f".../{a.relative_to(assets_folder)}") 
-            for a in broken_links
-        ]
-
     orphaned_files: list[Path] = get_orphaned_files(events, ogg_files)
-    if len(orphaned_files) > 0:
-        print(
-            f"{red}\nThe following .ogg files exist, "
-            f"but no JSON record refers to them:{default}")
-
-        temp = [
-            print(f".../{b.relative_to(assets_folder)}") 
-            for b in orphaned_files]
-
     alien_files: list[Path] = get_alien_files(assets_folder)
-    if len(alien_files) > 0:
-        print(
-            f"{red}\nThe following files are not .ogg files, "
-            f"but are in the sound folders anyway:{default}")
 
-        temp = [
-            print(f" .../{x.relative_to(assets_folder)}") 
-            for x in alien_files]
+    print_warnings(
+        "The following file names violate"
+        "Mojang's naming constraints:",
+        invalid_file_names,
+        assets_folder)
 
-    print(f"{green}\n-------------------------------------------------------")
-    print("Sound count:\n")
+    print_warnings(
+        "The following paths exist in JSON, "
+        "but do not correspond to actual file system files:",
+        broken_links,
+        assets_folder)
+
+    print_warnings(
+        "The following .ogg files exist, "
+        "but no JSON record refers to them: ",
+        orphaned_files,
+        assets_folder)
+
+    print_warnings(
+        "The following files are not .ogg files, "
+        "but are in the sound folders anyway:",
+        alien_files,
+        assets_folder)
+
+    bar = "-"*56
+    print(f"{Color.green.value}\n{bar}\nSound count:\n")
 
     count: int = 0
     for key in events:
@@ -315,8 +320,7 @@ def main():
             print(f"{key} -> {c}")
             count += c
 
-    print(f"\nTotal sounds: {count}")
-    print(f"-------------------------------------------------------{default}")
+    print(f"\nTotal sounds: {count}\n{bar}{Color.default.value}")
 
 
 # ------------------------------------------------------
