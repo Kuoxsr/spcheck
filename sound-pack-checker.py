@@ -15,7 +15,7 @@ Command-line arguments:
     --version   (-v)    Show version number
 """
 
-__version__ = '2.13'
+__version__ = '2.14'
 __maintainer__ = "kuoxsr@gmail.com"
 __status__ = "Prototype"
 
@@ -193,12 +193,9 @@ def get_orphaned_files(
     return orphaned_files
 
 
-def get_broken_links(events: dict[str, list[Path]]) -> list[Path]:
-
-    script_home_path: Path = Path(__file__).absolute().resolve().parent
-
-    vanilla_events = get_event_dictionary(
-        script_home_path / Path("vanilla-sounds.json"))
+def get_broken_links(
+        events: dict[str, list[Path]],
+        vanilla_events: dict[str, list[Path]]) -> list[Path]:
 
     broken_links: list[Path] = []
     for event, sounds in events.items():
@@ -266,16 +263,24 @@ def main():
     # All sound event records in sounds.json
     events: dict[str, list] = get_event_dictionary(args.path)
 
-    # All ogg files in folder structure
-    ogg_files: list[Path] = list(args.path.parent.parent.rglob("*.ogg"))
-
+    # The "trunk" of our tree
     assets_folder: Path = args.path.parent.parent
 
+    # All ogg files in folder structure
+    ogg_files: list[Path] = list(assets_folder.rglob("*.ogg"))
+
+    # All sound event records in the vanilla game
+    script_home_path: Path = Path(__file__).absolute().resolve().parent
+    vanilla_events = get_event_dictionary(
+        script_home_path / Path("vanilla-sounds.json"))
+
+    # Collect all the bad files/records
     invalid_file_names: list = get_invalid_file_names(events)
-    broken_links: list[Path] = get_broken_links(events)
+    broken_links: list[Path] = get_broken_links(events, vanilla_events)
     orphaned_files: list[Path] = get_orphaned_files(events, ogg_files)
     alien_files: list[Path] = get_alien_files(assets_folder)
 
+    # Print all the warnings to the user
     print_warnings(
         "The following file names violate"
         "Mojang's naming constraints:",
@@ -300,6 +305,7 @@ def main():
         alien_files,
         assets_folder)
 
+    # Sound count / summary
     bar = "-"*56
     print(f"{Color.green.value}\n{bar}\nSound count:\n")
 
