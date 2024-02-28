@@ -6,7 +6,8 @@ Problem: Validate a Minecraft Sound Resource pack
 Target Users: Me
 Target System: GNU/Linux
 Interface: Command-line
-Functional Requirements: Print out a list of broken links.
+Functional Requirements: Print out a list of potential errors.
+invalid file names, broken links, orphaned files, non-ogg files
 Notes:
 
 Command-line arguments:
@@ -15,7 +16,7 @@ Command-line arguments:
     --version   (-v)    Show version number
 """
 
-__version__ = '2.14'
+__version__ = '2.15'
 __maintainer__ = "kuoxsr@gmail.com"
 __status__ = "Prototype"
 
@@ -57,43 +58,29 @@ def handle_command_line():
                      "between json and sound files."))
 
     parser.add_argument(
-            "-v", 
-            "--version", 
+            "-v",
+            "--version",
             action="version", 
             version="%(prog)s version " + __version__)
 
     parser.add_argument(
-        "path",
+        "remainder",
         action="store",
         nargs=argparse.REMAINDER,
-        help=(
-            "Path to the sounds.json file you want to check.  "
-            "The file name itself is not required."))
+        help=("Path to the sounds.json file you want to check.  "
+              "The file name itself is not required."))
 
     args = parser.parse_args()
 
-    args.path = get_real_path(args.path)
+    args.path = get_real_path(args.remainder)
 
     return args
 
 
 def get_real_path(args_path: list[str]) -> Path:
 
-    input: Path = args_path[0] if (len(args_path) > 0) else ""
-
-    # Has the user specified a path at all?
-    if not input:
-        print("Path to sounds.json is required.")
-        exit(1)
-
-    path: Path = Path(input)
-
-    # Does path folder exist on the file system?
-    if not path.exists():
-        print(
-            f"Specified path not found. "
-            f"{path} is not a valid filesystem path.")
-        exit(1)
+    # if path has been specified, use it, otherwise assume cwd
+    path: Path = Path(args_path[0] if (len(args_path) > 0) else "")
 
     # Does the path refer only to a folder?  Assume sounds.json
     if path.is_dir():
@@ -101,13 +88,12 @@ def get_real_path(args_path: list[str]) -> Path:
 
     # Has the user specified the wrong file extension?
     if path.suffix != ".json":
-        print(f"specified file: {path} is not a JSON file")
-        exit(1)
+        raise ValueError(f"specified file: {path} is not a JSON file")
 
-    # Does sounds.json exist, now that we've added it for them
-    if not Path(path).exists():
-        print("sounds.json not found.")
-        exit(1)
+    # Does path folder exist on the file system?
+    if not path.exists():
+        raise FileNotFoundError(f"Specified path not found. "
+                                f"{path} is not a valid filesystem path.")
 
     return Path(path).resolve()
 
@@ -239,7 +225,6 @@ def print_warnings(message: str, files: list[Path], assets_folder: Path):
 
     print(f"{Color.red.value}\n{message}{Color.default.value}")
     temp = [print(f" .../{f.relative_to(assets_folder)}") for f in files]
-
 
 
 # Main -------------------------------------------------
