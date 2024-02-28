@@ -16,7 +16,7 @@ Command-line arguments:
     --version   (-v)    Show version number
 """
 
-__version__ = '2.15'
+__version__ = '2.16'
 __maintainer__ = "kuoxsr@gmail.com"
 __status__ = "Prototype"
 
@@ -227,6 +227,32 @@ def print_warnings(message: str, files: list[Path], assets_folder: Path):
     temp = [print(f" .../{f.relative_to(assets_folder)}") for f in files]
 
 
+def print_summary(events):
+
+    # Sound count / summary
+    bar = "-" * 56
+    print(f"{Color.green.value}\n{bar}\nSound count:\n")
+    count: int = 0
+
+    for key in events:
+        paths = [
+            pth for pth in events[key] if not pth.is_symlink() and pth.exists()
+        ]
+        links = list(set([
+            lnk.resolve() for lnk in events[key]
+            if lnk.is_symlink() and lnk.resolve().exists()
+        ]))
+        paths.extend(links)
+
+        c = len(paths)
+
+        if c > 0:
+            print(f"{key} -> {c}")
+            count += c
+
+    print(f"\nTotal sounds: {count}\n{bar}{Color.default.value}")
+
+
 # Main -------------------------------------------------
 def main():
     """
@@ -290,28 +316,7 @@ def main():
         alien_files,
         assets_folder)
 
-    # Sound count / summary
-    bar = "-"*56
-    print(f"{Color.green.value}\n{bar}\nSound count:\n")
-
-    count: int = 0
-    for key in events:
-        paths = [
-            pth for pth in events[key] if not pth.is_symlink() and pth.exists()
-        ]
-        links = list(set([
-                lnk.resolve() for lnk in events[key] 
-                if lnk.is_symlink() and lnk.resolve().exists()
-            ]))
-        paths.extend(links)
-
-        c = len(paths)
-
-        if c > 0:
-            print(f"{key} -> {c}")
-            count += c
-
-    print(f"\nTotal sounds: {count}\n{bar}{Color.default.value}")
+    print_summary(events)
 
 
 # ------------------------------------------------------
