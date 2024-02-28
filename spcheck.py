@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-# noinspection GrazieInspection
 """
 Problem: Validate a Minecraft Sound Resource pack
 Target Users: Me
@@ -27,19 +26,7 @@ import os
 import re
 import sys
 
-from enum import Enum
 from pathlib import Path
-from collections import Counter
-
-
-class Color(str, Enum):
- 
-    green = "\033[32m"
-    red = "\033[31m"
-    yellow = "\033[33m"
-    white = "\033[97m"
-    bold = "\033[1m"
-    default = "\033[0m"
 
 
 # ------------------------------------------------------
@@ -223,15 +210,21 @@ def print_warnings(message: str, files: list[Path], assets_folder: Path):
     if len(files) == 0:
         return
 
-    print(f"{Color.red.value}\n{message}{Color.default.value}")
+    red = "\033[31m"
+    default = "\033[0m"
+
+    print(f"{red}\n{message}{default}")
     temp = [print(f" .../{f.relative_to(assets_folder)}") for f in files]
 
 
 def print_summary(events):
 
+    green = "\033[32m"
+    default = "\033[0m"
+
     # Sound count / summary
     bar = "-" * 56
-    print(f"{Color.green.value}\n{bar}\nSound count:\n")
+    print(f"{green}\n{bar}\nSound count:\n")
     count: int = 0
 
     for key in events:
@@ -250,7 +243,7 @@ def print_summary(events):
             print(f"{key} -> {c}")
             count += c
 
-    print(f"\nTotal sounds: {count}\n{bar}{Color.default.value}")
+    print(f"\nTotal sounds: {count}\n{bar}{default}")
 
 
 # Main -------------------------------------------------
@@ -260,16 +253,17 @@ def main():
     This function generates lists of invalid connections 
     between json and sound files
     """
+    yellow = "\033[33m"
+    white = "\033[97m"
+    bold = "\033[1m"
+    default = "\033[0m"
 
     # Platform independent clearing of screen
     os.system('cls||clear')
 
     args = handle_command_line()
 
-    print(
-        f"{Color.bold.value}{Color.white.value}"
-        f"Scanning file:\n{Color.default.value}"
-        f"{Color.yellow.value}{args.path}")
+    print(f"{bold}{white}Scanning file:\n{default}{yellow}{args.path}")
 
     # All sound event records in sounds.json
     events: dict[str, list] = get_event_dictionary(args.path)
