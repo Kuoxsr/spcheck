@@ -75,3 +75,21 @@ def test_get_broken_links_should_return_empty_list_when_links_match_symlinked_fi
     result = get_broken_links(events, vanilla_events)
     assert len(result) == 0
 
+
+def test_get_broken_links_should_return_list_when_links_match_symlinked_files_that_cannot_be_resolved(fs):
+
+    # TODO: sound events contain ".ogg" and probably shouldn't
+    # ...seems like a hack to include the ".ogg" in the sound events list
+    event_path = "/path/to/file.ogg"
+    path: Path = Path(event_path)
+    actual_file: str = "/actual/path/to/linked/cow.ambient/file01.ogg"
+    fs.create_symlink(event_path, actual_file)
+
+    events: dict[str, list[Path]] = {"entity.villager.death": [path]}
+
+    vanilla_events: dict[str, list[Path]] = {"entity.villager.death": [Path("dummy")]}
+
+    result = get_broken_links(events, vanilla_events)
+    assert len(result) == 1
+    assert result[0] == Path(event_path)
+
