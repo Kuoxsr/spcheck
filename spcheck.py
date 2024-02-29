@@ -15,7 +15,7 @@ Command-line arguments:
     --version   (-v)    Show version number
 """
 
-__version__ = '2.16'
+__version__ = '2.17'
 __maintainer__ = "kuoxsr@gmail.com"
 __status__ = "Prototype"
 
@@ -144,28 +144,6 @@ def get_invalid_file_names(events: dict[str, list[Path]]) -> list[Path]:
     return bad_names
 
 
-def get_orphaned_files(
-           events: dict[str, list[Path]], 
-           ogg_files: list[Path]) -> list[Path]:
-
-    orphaned_files: list[Path] = []
-
-    sounds: list[Path] = []
-    for sound in events.values():
-        sounds.extend(sound)
-
-    links: list[Path] = list(
-        set([lnk.resolve() for lnk in ogg_files if lnk.is_symlink()]))
-
-    orphans: list[Path] = [
-        o for o in ogg_files if o not in sounds and o not in links]
-
-    if len(orphans) > 0:
-        orphaned_files.extend(orphans)
-
-    return orphaned_files
-
-
 def get_broken_links(
         events: dict[str, list[Path]],
         vanilla_events: dict[str, list[Path]]) -> list[Path]:
@@ -188,6 +166,28 @@ def get_broken_links(
                 broken_links.append(pth)
 
     return broken_links
+
+
+def get_orphaned_files(
+           events: dict[str, list[Path]], 
+           ogg_files: list[Path]) -> list[Path]:
+
+    orphaned_files: list[Path] = []
+
+    sounds: list[Path] = []
+    for sound in events.values():
+        sounds.extend(sound)
+
+    links: list[Path] = list(
+        set([lnk.resolve() for lnk in ogg_files if lnk.is_symlink()]))
+
+    orphans: list[Path] = [
+        o for o in ogg_files if o not in sounds and o not in links]
+
+    if len(orphans) > 0:
+        orphaned_files.extend(orphans)
+
+    return orphaned_files
 
 
 def get_alien_files(path: Path) -> list[Path]:
