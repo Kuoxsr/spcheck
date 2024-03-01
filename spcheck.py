@@ -15,7 +15,7 @@ Command-line arguments:
     --version   (-v)    Show version number
 """
 
-__version__ = '2.19'
+__version__ = '2.20'
 __maintainer__ = "kuoxsr@gmail.com"
 __status__ = "Prototype"
 
@@ -216,7 +216,7 @@ def print_warnings(message: str, files: list[Path], assets_folder: Path):
     default = "\033[0m"
 
     print(f"{red}\n{message}{default}")
-    temp = [print(f" .../{f.relative_to(assets_folder)}") for f in files]
+    [print(f" .../{f.relative_to(assets_folder)}") for f in files]
 
 
 def print_summary(events):
