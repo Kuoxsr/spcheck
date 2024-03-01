@@ -15,7 +15,7 @@ Command-line arguments:
     --version   (-v)    Show version number
 """
 
-__version__ = '2.17'
+__version__ = '2.18'
 __maintainer__ = "kuoxsr@gmail.com"
 __status__ = "Prototype"
 
@@ -148,6 +148,7 @@ def get_broken_links(
         events: dict[str, list[Path]],
         vanilla_events: dict[str, list[Path]]) -> list[Path]:
 
+    vanilla_sounds: list[Path] = []
     broken_links: list[Path] = []
     for event, sounds in events.items():
 
@@ -162,8 +163,9 @@ def get_broken_links(
                 broken_links.append(pth)
                 continue
 
-            if pth.name not in list(v.name for v in vanilla_sounds):
-                broken_links.append(pth)
+            if vanilla_sounds:
+                if pth.name not in list(v.name for v in vanilla_sounds):
+                    broken_links.append(pth)
 
     return broken_links
 
