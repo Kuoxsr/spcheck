@@ -15,7 +15,7 @@ Command-line arguments:
     --version   (-v)    Show version number
 """
 
-__version__ = '2.18'
+__version__ = '2.19'
 __maintainer__ = "kuoxsr@gmail.com"
 __status__ = "Prototype"
 
@@ -192,7 +192,7 @@ def get_orphaned_files(
     return orphaned_files
 
 
-def get_alien_files(path: Path) -> list[Path]:
+def get_irrelevant_files(path: Path) -> list[Path]:
     """
     Generates a list of files under the specified path 
     that are not .ogg files
@@ -200,9 +200,9 @@ def get_alien_files(path: Path) -> list[Path]:
     :return: A list of paths to files that shouldn't be 
     in this folder structure
     """
-    all = path.glob('**/*')
+    all_files = path.glob('**/*')
     alien_files: list[Path] = [
-        f for f in all if f.is_file() and f.suffix not in (".ogg", ".json")]
+        f for f in all_files if f.is_file() and f.suffix not in (".ogg", ".json")]
 
     return sorted(alien_files)
 
@@ -285,7 +285,7 @@ def main():
     invalid_file_names: list = get_invalid_file_names(events)
     broken_links: list[Path] = get_broken_links(events, vanilla_events)
     orphaned_files: list[Path] = get_orphaned_files(events, ogg_files)
-    alien_files: list[Path] = get_alien_files(assets_folder)
+    alien_files: list[Path] = get_irrelevant_files(assets_folder)
 
     # Print all the warnings to the user
     print_warnings(
