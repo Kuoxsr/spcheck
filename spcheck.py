@@ -15,7 +15,7 @@ Command-line arguments:
     --version   (-v)    Show version number
 """
 
-__version__ = '2.21'
+__version__ = '2.22'
 __maintainer__ = "kuoxsr@gmail.com"
 __status__ = "Prototype"
 
@@ -192,19 +192,20 @@ def get_orphaned_files(
     return orphaned_files
 
 
-def get_irrelevant_files(path: Path) -> list[Path]:
+def get_irrelevant_files(all_files: list[Path]) -> list[Path]:
     """
-    Generates a list of files under the specified path 
-    that are not .ogg files
-    :param path: The path from which to begin the search
+    Given the list of all files in the target path,
+    generate a list of all files that are not relevant
+    to the sound pack.
+    :param all_files: The list of files to search
     :return: A list of paths to files that shouldn't be 
     in this folder structure
     """
-    all_files = path.glob('**/*')
-    alien_files: list[Path] = [
-        f for f in all_files if f.is_file() and f.suffix not in (".ogg", ".json")]
 
-    return sorted(alien_files)
+    irrelevant_files: list[Path] = [
+        f for f in all_files if f.suffix not in (".ogg", ".json")]
+
+    return sorted(irrelevant_files)
 
 
 def print_warnings(message: str, files: list[Path], assets_folder: Path):
@@ -277,6 +278,7 @@ def main():
 
     # All ogg files in folder structure
     ogg_files: list[Path] = list(assets_folder.rglob("*.ogg"))
+    all_files: list[Path] = list(f for f in assets_folder.rglob("*") if f.is_file())
 
     # All sound event records in the vanilla game
     script_home_path: Path = Path(__file__).absolute().resolve().parent
@@ -284,10 +286,14 @@ def main():
         script_home_path / Path("vanilla-sounds.json"))
 
     # Collect all the bad files/records
+    irrelevant_files: list[Path] = get_irrelevant_files(all_files)
+
+    # Remove the irrelevant files from our list
+    all_files = [f for f in all_files if f not in irrelevant_files]
+
     invalid_file_names: list = get_invalid_file_names(events)
     broken_links: list[Path] = get_broken_links(events, vanilla_events)
     orphaned_files: list[Path] = get_orphaned_files(events, ogg_files)
-    alien_files: list[Path] = get_irrelevant_files(assets_folder)
 
     # Print all the warnings to the user
     print_warnings(
@@ -311,7 +317,7 @@ def main():
     print_warnings(
         "The following files are not .ogg files, "
         "but are in the sound folders anyway:",
-        alien_files,
+        irrelevant_files,
         assets_folder)
 
     print_summary(events)
