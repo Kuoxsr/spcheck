@@ -15,7 +15,7 @@ Command-line arguments:
     --version   (-v)    Show version number
 """
 
-__version__ = '2.20'
+__version__ = '2.21'
 __maintainer__ = "kuoxsr@gmail.com"
 __status__ = "Prototype"
 
@@ -219,7 +219,7 @@ def print_warnings(message: str, files: list[Path], assets_folder: Path):
     [print(f" .../{f.relative_to(assets_folder)}") for f in files]
 
 
-def print_summary(events):
+def print_summary(events: dict[str, list[Path]]):
 
     green = "\033[32m"
     default = "\033[0m"
@@ -228,6 +228,8 @@ def print_summary(events):
     bar = "-" * 56
     print(f"{green}\n{bar}\nSound count:\n")
     count: int = 0
+
+    events = {k: v for k, v in sorted(events.items(), key=lambda ele: ele[0])}
 
     for key in events:
         paths = [
