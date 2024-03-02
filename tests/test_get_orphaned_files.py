@@ -28,3 +28,41 @@ def test_get_orphaned_files_should_return_empty_list_when_everything_linked_corr
 
     assert len(result) == 0
 
+
+def test_get_orphaned_files_should_return_empty_list_when_file_is_referenced_by_a_symlink(fs):
+
+    # TODO: sound events contain ".ogg" and probably shouldn't
+    # ...seems like a hack to include the ".ogg" in the sound events list
+    event_path = "/path/to/file.ogg"
+    path: Path = Path(event_path)
+    actual_file: str = "/actual/path/to/linked/cow.ambient/file01.ogg"
+    fs.create_file(actual_file)
+    fs.create_symlink(event_path, actual_file)
+
+    events: dict[str, list[Path]] = {"test.sound.event": [path]}
+
+    result = get_orphaned_files(events, [Path(event_path)])
+    assert len(result) == 0
+
+
+def test_get_orphaned_files_should_not_return_broken_links_as_orphans(fs):
+    """
+    A symlink that doesn't point to anything shouldn't be counted
+    as an orphan, because after the zip process, it won't exist
+    in the package.
+    :param fs: fake filesystem
+    :return: None
+    """
+
+    # TODO: sound events contain ".ogg" and probably shouldn't
+    # ...seems like a hack to include the ".ogg" in the sound events list
+    event_path = "/path/to/file.ogg"
+    path: Path = Path(event_path)
+    link_target: str = "/actual/path/to/linked/cow.ambient/file01.ogg"
+    fs.create_symlink(event_path, link_target)
+
+    events: dict[str, list[Path]] = {"test.sound.event": [path]}
+
+    result = get_orphaned_files(events, [Path(event_path)])
+    assert len(result) == 0
+

@@ -15,7 +15,7 @@ Command-line arguments:
     --version   (-v)    Show version number
 """
 
-__version__ = '2.22'
+__version__ = '2.23'
 __maintainer__ = "kuoxsr@gmail.com"
 __status__ = "Prototype"
 
@@ -128,6 +128,52 @@ def get_sound_path(path: Path, sound: str) -> Path:
     return temp
 
 
+def get_irrelevant_files(all_files: list[Path]) -> list[Path]:
+    """
+    Given the list of all files in the target path,
+    generate a list of all files that are not relevant
+    to the sound pack.
+    :param all_files: The list of files to search
+    :return: A list of paths to files that shouldn't be
+    in this folder structure
+    """
+
+    irrelevant_files: list[Path] = [
+        f for f in all_files if f.suffix not in (".ogg", ".json")]
+
+    return sorted(irrelevant_files)
+
+
+def get_orphaned_files(events: dict[str, list[Path]],
+                       ogg_files: list[Path]) -> list[Path]:
+    """
+    Given a list of sound events and a list of ogg files,
+    generate a list of files that don't have a matching record
+    in the JSON file.
+    :param events: A dictionary of sound events
+    :param ogg_files: A list of ogg paths
+    :return: A list of files that don't have matching JSON
+    """
+
+    orphaned_files: list[Path] = []
+
+    sounds: list[Path] = []
+    [sounds.extend(s) for s in events.values()]
+
+    # orphaned_files = [f for f in ogg_files if f not in sounds]
+
+    links: list[Path] = list(
+        set([lnk.resolve() for lnk in ogg_files if lnk.is_symlink()]))
+
+    orphans: list[Path] = [
+        o for o in ogg_files if o not in sounds and o not in links]
+
+    if len(orphans) > 0:
+        orphaned_files.extend(orphans)
+
+    return orphaned_files
+
+
 def get_invalid_file_names(events: dict[str, list[Path]]) -> list[Path]:
 
     bad_names: list[Path] = []
@@ -168,44 +214,6 @@ def get_broken_links(
                     broken_links.append(pth)
 
     return broken_links
-
-
-def get_orphaned_files(
-           events: dict[str, list[Path]], 
-           ogg_files: list[Path]) -> list[Path]:
-
-    orphaned_files: list[Path] = []
-
-    sounds: list[Path] = []
-    for sound in events.values():
-        sounds.extend(sound)
-
-    links: list[Path] = list(
-        set([lnk.resolve() for lnk in ogg_files if lnk.is_symlink()]))
-
-    orphans: list[Path] = [
-        o for o in ogg_files if o not in sounds and o not in links]
-
-    if len(orphans) > 0:
-        orphaned_files.extend(orphans)
-
-    return orphaned_files
-
-
-def get_irrelevant_files(all_files: list[Path]) -> list[Path]:
-    """
-    Given the list of all files in the target path,
-    generate a list of all files that are not relevant
-    to the sound pack.
-    :param all_files: The list of files to search
-    :return: A list of paths to files that shouldn't be 
-    in this folder structure
-    """
-
-    irrelevant_files: list[Path] = [
-        f for f in all_files if f.suffix not in (".ogg", ".json")]
-
-    return sorted(irrelevant_files)
 
 
 def print_warnings(message: str, files: list[Path], assets_folder: Path):
@@ -278,22 +286,31 @@ def main():
 
     # All ogg files in folder structure
     ogg_files: list[Path] = list(assets_folder.rglob("*.ogg"))
-    all_files: list[Path] = list(f for f in assets_folder.rglob("*") if f.is_file())
+
+    # All files in the entire folder structure
+    all_files: list[Path] = (
+        list(f for f in assets_folder.rglob("*") if f.is_file()))
 
     # All sound event records in the vanilla game
     script_home_path: Path = Path(__file__).absolute().resolve().parent
     vanilla_events = get_event_dictionary(
         script_home_path / Path("vanilla-sounds.json"))
 
-    # Collect all the bad files/records
+    # Collect all the files that don't belong in the pack
     irrelevant_files: list[Path] = get_irrelevant_files(all_files)
 
     # Remove the irrelevant files from our list
     all_files = [f for f in all_files if f not in irrelevant_files]
+    ogg_files = [f for f in all_files if f.suffix == ".ogg"]
+
+    # Collect all the ogg files that have no JSON reference
+    orphaned_files: list[Path] = get_orphaned_files(events, ogg_files)
+
+    # Remove the orphans from our list
+    ogg_files = [f for f in all_files if f not in orphaned_files]
 
     invalid_file_names: list = get_invalid_file_names(events)
     broken_links: list[Path] = get_broken_links(events, vanilla_events)
-    orphaned_files: list[Path] = get_orphaned_files(events, ogg_files)
 
     # Print all the warnings to the user
     print_warnings(
