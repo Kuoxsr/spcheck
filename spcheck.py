@@ -15,7 +15,7 @@ Command-line arguments:
     --version   (-v)    Show version number
 """
 
-__version__ = '2.24'
+__version__ = '2.25'
 __maintainer__ = "kuoxsr@gmail.com"
 __status__ = "Prototype"
 
@@ -182,22 +182,6 @@ def get_orphaned_files(events: dict[str, list[Path]],
     return orphaned_files
 
 
-def get_invalid_file_names(events: dict[str, list[Path]]) -> list[Path]:
-
-    bad_names: list[Path] = []
-    pattern = re.compile("^[a-z0-9/._-]+$")
-
-    for value in events.values():
-
-        for sound in value:
-
-            # Check for "invalid" characters
-            if not pattern.match(str(sound)):
-                bad_names.append(sound)
-
-    return bad_names
-
-
 def get_broken_links(
         events: dict[str, list[Path]],
         vanilla_events: dict[str, list[Path]],
@@ -232,6 +216,19 @@ def get_broken_links(
         broken_links.extend([p for p in sounds if p not in good_paths])
 
     return broken_links
+
+
+def get_invalid_file_names(ogg_files: list[Path]) -> list[Path]:
+    """
+    Given a list of paths, generate a list of paths that
+    violate Mojang's naming rules.
+    :param: ogg_files: A list of paths
+    :return: A list of the paths that fail Mojang's naming test
+    """
+
+    pattern = re.compile("^[a-z0-9/._-]+$")
+    bad_names = [n for n in ogg_files if not pattern.match(str(n))]
+    return bad_names
 
 
 def print_warnings(message: str, files: list[Path], assets_folder: Path):
@@ -321,13 +318,19 @@ def main():
     orphaned_files: list[Path] = get_orphaned_files(events, ogg_files)
 
     # Remove the orphans from our list
-    ogg_files = [f for f in all_files if f not in orphaned_files]
+    ogg_files = [f for f in ogg_files if f not in orphaned_files]
 
     # Collect all the JSON references that have no corresponding ogg file
     broken_links: list[Path] = (
         get_broken_links(events, vanilla_events, ogg_files))
 
-    invalid_file_names: list = get_invalid_file_names(events)
+    # Remove the orphans from our list
+    ogg_files = [f for f in ogg_files if f not in broken_links]
+
+    invalid_file_names: list = get_invalid_file_names(ogg_files)
+
+    # Remove the orphans from our list
+    # ogg_files = [f for f in ogg_files if f not in invalid_file_names]
 
     # Print all the warnings to the user
     print_warnings(
