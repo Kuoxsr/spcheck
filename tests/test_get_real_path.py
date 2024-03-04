@@ -1,6 +1,6 @@
-from spcheck import get_real_path
-
 import pytest
+
+from spcheck import get_real_path
 
 
 def test_get_real_path_should_add_sounds_json_when_only_a_folder_specified(fs):

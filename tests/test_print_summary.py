@@ -1,5 +1,4 @@
-from pathlib import Path
-
+from objects.custom_path import Path
 from spcheck import print_summary
 
 
