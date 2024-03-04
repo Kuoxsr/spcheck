@@ -243,7 +243,7 @@ def print_warnings(message: str, files: list[Path], assets_folder: Path):
     [print(f" .../{f.relative_to(assets_folder)}") for f in files]
 
 
-def print_summary(events: dict[str, list[Path]]):
+def print_summary(events: dict[str, list[Path]], ogg_files: list[Path]):
 
     green = "\033[32m"
     default = "\033[0m"
@@ -254,19 +254,11 @@ def print_summary(events: dict[str, list[Path]]):
     count: int = 0
 
     events = {k: v for k, v in sorted(events.items(), key=lambda ele: ele[0])}
-
     for key in events:
-        paths = [
-            pth for pth in events[key] if not pth.is_symlink() and pth.exists()
-        ]
-        links = list(set([
-            lnk.resolve() for lnk in events[key]
-            if lnk.is_symlink() and lnk.resolve().exists()
-        ]))
-        paths.extend(links)
+
+        paths = [p for p in events[key] if p in ogg_files]
 
         c = len(paths)
-
         if c > 0:
             print(f"{key} -> {c}")
             count += c
@@ -330,7 +322,7 @@ def main():
     invalid_file_names: list = get_invalid_file_names(ogg_files)
 
     # Remove the orphans from our list
-    # ogg_files = [f for f in ogg_files if f not in invalid_file_names]
+    ogg_files = [f for f in ogg_files if f not in invalid_file_names]
 
     # Print all the warnings to the user
     print_warnings(
@@ -357,7 +349,7 @@ def main():
         irrelevant_files,
         assets_folder)
 
-    print_summary(events)
+    print_summary(events, ogg_files)
 
 
 # ------------------------------------------------------
