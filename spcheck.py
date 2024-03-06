@@ -15,7 +15,7 @@ Command-line arguments:
     --version   (-v)    Show version number
 """
 
-__version__ = '2.27'
+__version__ = '2.28'
 __maintainer__ = "kuoxsr@gmail.com"
 __status__ = "Prototype"
 
@@ -225,7 +225,7 @@ def get_invalid_file_names(ogg_files: list[Path]) -> list[Path]:
 
     pattern = re.compile("^[a-z0-9/._-]+$")
     bad_names = [n for n in ogg_files if not pattern.match(str(n))]
-    return bad_names
+    return sorted(bad_names)  # noqa
 
 
 def print_warnings(message: str, files: list[Path], assets_folder: Path):
