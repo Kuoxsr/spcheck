@@ -15,7 +15,7 @@ Command-line arguments:
     --version   (-v)    Show version number
 """
 
-__version__ = '2.28'
+__version__ = '2.29'
 __maintainer__ = "kuoxsr@gmail.com"
 __status__ = "Prototype"
 
@@ -147,7 +147,7 @@ def get_irrelevant_files(all_files: list[Path]) -> list[Path]:
     """
 
     irrelevant_files: list[Path] = [
-        f for f in all_files if f.suffix not in (".ogg", ".json")]
+        f for f in all_files if f.suffix != ".ogg"]
 
     return sorted(irrelevant_files)  # noqa
 
