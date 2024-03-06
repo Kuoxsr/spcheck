@@ -15,7 +15,7 @@ Command-line arguments:
     --version   (-v)    Show version number
 """
 
-__version__ = '2.26'
+__version__ = '2.27'
 __maintainer__ = "kuoxsr@gmail.com"
 __status__ = "Prototype"
 
@@ -169,7 +169,7 @@ def get_orphaned_files(events: dict[str, list[Path]],
     [sounds.extend(s) for s in events.values()]
 
     links: list[Path] = list(
-        set([lnk.resolve() for lnk in ogg_files if lnk.is_symlink()]))
+        set([lnk.target_path for lnk in ogg_files if lnk.is_symbolic_link]))
 
     orphans: list[Path] = [
         o for o in ogg_files if o not in sounds and o not in links]
@@ -177,7 +177,7 @@ def get_orphaned_files(events: dict[str, list[Path]],
     if len(orphans) > 0:
         orphaned_files.extend(orphans)
 
-    return orphaned_files
+    return sorted(orphaned_files)  # noqa
 
 
 def get_broken_links(
