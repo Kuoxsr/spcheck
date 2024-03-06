@@ -15,7 +15,7 @@ Command-line arguments:
     --version   (-v)    Show version number
 """
 
-__version__ = '2.25'
+__version__ = '2.26'
 __maintainer__ = "kuoxsr@gmail.com"
 __status__ = "Prototype"
 
@@ -168,8 +168,6 @@ def get_orphaned_files(events: dict[str, list[Path]],
     sounds: list[Path] = []
     [sounds.extend(s) for s in events.values()]
 
-    # orphaned_files = [f for f in ogg_files if f not in sounds]
-
     links: list[Path] = list(
         set([lnk.resolve() for lnk in ogg_files if lnk.is_symlink()]))
 
@@ -204,18 +202,17 @@ def get_broken_links(
         p for p in ogg_files if
         p.is_symbolic_link is True and p.target_path is not None])
 
+    # JSON records that point to vanilla sounds
+    keys = [k for k in vanilla_events.keys() if k in events.keys()]
+    for k in keys:
+        file_paths.extend(vanilla_events[k])
+
+    # Based on the 3 categories, above, the following are bad
     broken_links: list[Path] = []
     for event, sounds in events.items():
+        broken_links.extend([p for p in sounds if p not in file_paths])
 
-        good_paths = file_paths
-
-        # JSON records that point to vanilla sounds
-        if event in vanilla_events.keys():
-            good_paths.extend([v for v in vanilla_events[event]])
-
-        broken_links.extend([p for p in sounds if p not in good_paths])
-
-    return broken_links
+    return sorted(broken_links)  # noqa
 
 
 def get_invalid_file_names(ogg_files: list[Path]) -> list[Path]:

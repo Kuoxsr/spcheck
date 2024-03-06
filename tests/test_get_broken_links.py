@@ -33,8 +33,53 @@ def test_get_broken_links_should_return_list_when_json_does_not_match_files_incl
 
     result = get_broken_links(events, vanilla_events, ogg_files)
     assert len(result) == 2
+    assert result[0] == path4
+    assert result[1] == path2
+
+
+def test_get_broken_links_should_return_list_when_some_json_does_not_match_some_vanilla():
+
+    path1: Path = Path("/path/to/villager.death/file01.ogg")
+    path2: Path = Path("/path/to/bad/villager.death/file02.ogg")
+    path3: Path = Path("/path/to/cow.ambient/file03.ogg")
+    path4: Path = Path("/path/to/cow.ambient/file04.ogg")
+    path5: Path = Path("/path/to/bad/witch.celebrate/file05.ogg")
+    path6: Path = Path("/path/to/witch.celebrate/file06.ogg")
+
+    ogg_files: list[Path] = []
+
+    events: dict[str, list[Path]] = {
+        "entity.villager.death": [path1, path2],
+        "entity.cow.ambient": [path3, path4],
+        "entity.witch.celebrate": [path5, path6]}
+
+    vanilla_events: dict[str, list[Path]] = {
+        "entity.villager.death": [path1],
+        "entity.cow.ambient": [path3, path4],
+        "entity.witch.celebrate": [path6]}
+
+    result = get_broken_links(events, vanilla_events, ogg_files)
+    assert len(result) == 2
     assert result[0] == path2
-    assert result[1] == path4
+    assert result[1] == path5
+
+
+def test_get_broken_links_should_return_list_that_is_sorted_alphabetically():
+
+    path1: Path = Path("/path/to/villager.death/file01.ogg")
+    path2: Path = Path("/path/to/slime.squish/file02.ogg")
+
+    ogg_files: list[Path] = []
+    vanilla_events: dict[str, list[Path]] = {}
+
+    events: dict[str, list[Path]] = {
+        "entity.villager.death": [path1],
+        "entity.slime.squish": [path2]}
+
+    result = get_broken_links(events, vanilla_events, ogg_files)
+    assert len(result) == 2
+    assert result[0] == path2
+    assert result[1] == path1
 
 
 def test_get_broken_links_should_return_empty_list_when_json_matches_vanilla():
@@ -56,8 +101,8 @@ def test_get_broken_links_should_return_empty_list_when_json_matches_vanilla():
 
     result = get_broken_links(events, vanilla_events, ogg_files)
     assert len(result) == 2
-    assert result[0] == path2
-    assert result[1] == path5
+    assert result[0] == path5
+    assert result[1] == path2
 
 
 def test_get_broken_links_should_return_empty_list_when_json_matches_files():
