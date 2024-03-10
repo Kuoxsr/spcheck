@@ -1,7 +1,7 @@
 import pathlib
 
 
-class Path(type(pathlib.Path())):
+class CPath(type(pathlib.Path())):
     def __new__(cls, *args, **kwargs):
         self = super().__new__(cls, *args, **kwargs)
 

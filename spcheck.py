@@ -15,7 +15,7 @@ Command-line arguments:
     --version   (-v)    Show version number
 """
 
-__version__ = '2.29'
+__version__ = '2.30'
 __maintainer__ = "kuoxsr@gmail.com"
 __status__ = "Prototype"
 
@@ -26,7 +26,8 @@ import os
 import re
 import sys
 
-from objects.custom_path import Path
+from SoundEventHandler import SoundEventHandler
+from objects.custom_path import CPath
 
 
 # ------------------------------------------------------
@@ -54,7 +55,7 @@ def handle_command_line():
         "remainder",
         action="store",
         nargs=argparse.REMAINDER,
-        help=("Path to the sounds.json file you want to check.  "
+        help=("CPath to the sounds.json file you want to check.  "
               "The file name itself is not required."))
 
     args = parser.parse_args()
@@ -64,10 +65,10 @@ def handle_command_line():
     return args
 
 
-def get_real_path(args_path: list[str]) -> Path:
+def get_real_path(args_path: list[str]) -> CPath:
 
     # if path has been specified, use it, otherwise assume cwd
-    path: Path = Path(args_path[0] if (len(args_path) > 0) else "")
+    path: CPath = CPath(args_path[0] if (len(args_path) > 0) else "")
 
     # Does the path refer only to a folder?  Assume sounds.json
     if path.is_dir():
@@ -82,61 +83,18 @@ def get_real_path(args_path: list[str]) -> Path:
     if path.suffix != ".json":
         raise ValueError(f"specified file: {path} is not a JSON file")
 
-    return Path(path).resolve()
+    return CPath(path).resolve()
 
 
-def get_event_dictionary(path: Path) -> dict[str, list[Path]]:
+def get_all_files(assets_folder: CPath):
 
-    with open(path, "r") as read_file:
-        json_data: dict = dict(json.load(read_file))
-
-    events: dict[str, list] = {}
-
-    for event in json_data.items():
-
-        sound_paths: list[Path] = []
-        for sound in event[1]['sounds']:
-            sound_paths.append(get_sound_path(path, sound))
-
-        events[event[0]] = sound_paths
-
-    return events
-
-
-def get_sound_path(path: Path, sound: str) -> Path:
-
-    if isinstance(sound, str):
-        sound_path = sound
-
-    elif isinstance(sound, dict):
-        sound_path = sound['name']
-
-    else:
-        sys.exit(f"\nI have no idea how to process this: {sound}\n")
-
-    namespace: str = "minecraft"
-
-    if ":" in sound_path:
-        parts = sound_path.split(":")
-        namespace = Path(parts[0])
-        sound_path = Path(parts[1])
-
-    # TODO: sound events contain ".ogg" and probably shouldn't
-    # ...seems like a hack to include the ".ogg" in the sound events list
-    new_path: str = str(sound_path) + ".ogg"
-    temp = path.parent.parent / namespace / "sounds" / new_path
-    return temp
-
-
-def get_all_files(assets_folder: Path):
-
-    files: list[Path] = (
-        list(Path(f) for f in assets_folder.rglob("*") if f.is_file()))
+    files: list[CPath] = (
+        list(CPath(f) for f in assets_folder.rglob("*") if f.is_file()))
 
     return files
 
 
-def get_irrelevant_files(all_files: list[Path]) -> list[Path]:
+def get_irrelevant_files(all_files: list[CPath]) -> list[CPath]:
     """
     Given the list of all files in the target path,
     generate a list of all files that are not relevant
@@ -146,14 +104,14 @@ def get_irrelevant_files(all_files: list[Path]) -> list[Path]:
     in this folder structure
     """
 
-    irrelevant_files: list[Path] = [
-        f for f in all_files if f.suffix != ".ogg"]
+    irrelevant_files: list[CPath] = [
+        f for f in all_files if f.suffix != ".ogg" and f.suffix != ".json"]
 
     return sorted(irrelevant_files)  # noqa
 
 
-def get_orphaned_files(events: dict[str, list[Path]],
-                       ogg_files: list[Path]) -> list[Path]:
+def get_orphaned_files(events: SoundEventHandler,
+                       ogg_files: list[CPath]) -> list[CPath]:
     """
     Given a list of sound events and a list of ogg files,
     generate a list of files that don't have a matching record
@@ -162,28 +120,23 @@ def get_orphaned_files(events: dict[str, list[Path]],
     :param ogg_files: A list of ogg paths
     :return: A list of files that don't have matching JSON
     """
+    sounds: list[CPath] = events.get_sound_files()
 
-    orphaned_files: list[Path] = []
+    links: list[CPath] = list(
+        set([k.target_path for k in ogg_files if k.is_symbolic_link]))
 
-    sounds: list[Path] = []
-    [sounds.extend(s) for s in events.values()]
-
-    links: list[Path] = list(
-        set([lnk.target_path for lnk in ogg_files if lnk.is_symbolic_link]))
-
-    orphans: list[Path] = [
+    orphans: list[CPath] = [
         o for o in ogg_files if o not in sounds and o not in links]
 
-    if len(orphans) > 0:
-        orphaned_files.extend(orphans)
+    orphaned_files: list[CPath] = orphans if len(orphans) > 0 else []
 
     return sorted(orphaned_files)  # noqa
 
 
 def get_broken_links(
-        events: dict[str, list[Path]],
-        vanilla_events: dict[str, list[Path]],
-        ogg_files: list[Path]) -> list[Path]:
+        events: SoundEventHandler,
+        vanilla_events: SoundEventHandler,
+        ogg_files: list[CPath]) -> list[CPath]:
     """
     Given a list of JSON sound references and a list of the ogg files in
     the folder structure, generate a list of the JSON references that
@@ -195,7 +148,9 @@ def get_broken_links(
     """
 
     # Normal files
-    file_paths = [p for p in ogg_files if p.is_symbolic_link is False]
+    file_paths = [
+        events.get_sound_path(str(p)) for p
+        in ogg_files if p.is_symbolic_link is False]
 
     # Symlinks that can be resolved
     file_paths.extend([
@@ -203,19 +158,16 @@ def get_broken_links(
         p.is_symbolic_link is True and p.target_path is not None])
 
     # JSON records that point to vanilla sounds
-    keys = [k for k in vanilla_events.keys() if k in events.keys()]
-    for k in keys:
-        file_paths.extend(vanilla_events[k])
+    file_paths.extend(events.get_sound_files_in(vanilla_events))
 
     # Based on the 3 categories, above, the following are bad
-    broken_links: list[Path] = []
-    for event, sounds in events.items():
-        broken_links.extend([p for p in sounds if p not in file_paths])
+    events_sounds = events.get_sound_files()
+    broken_links = [p for p in events_sounds if p not in file_paths]
 
     return sorted(broken_links)  # noqa
 
 
-def get_invalid_file_names(ogg_files: list[Path]) -> list[Path]:
+def get_invalid_file_names(ogg_files: list[CPath]) -> list[CPath]:
     """
     Given a list of paths, generate a list of paths that
     violate Mojang's naming rules.
@@ -228,7 +180,7 @@ def get_invalid_file_names(ogg_files: list[Path]) -> list[Path]:
     return sorted(bad_names)  # noqa
 
 
-def print_warnings(message: str, files: list[Path], assets_folder: Path):
+def print_warnings(message: str, files: list[CPath], assets_folder: CPath):
 
     if len(files) == 0:
         return
@@ -240,7 +192,7 @@ def print_warnings(message: str, files: list[Path], assets_folder: Path):
     [print(f" .../{f.relative_to(assets_folder)}") for f in files]
 
 
-def print_summary(events: dict[str, list[Path]], ogg_files: list[Path]):
+def print_summary(events: SoundEventHandler, ogg_files: list[CPath]):
 
     green = "\033[32m"
     default = "\033[0m"
@@ -250,10 +202,9 @@ def print_summary(events: dict[str, list[Path]], ogg_files: list[Path]):
     print(f"{green}\n{bar}\nSound count:\n")
     count: int = 0
 
-    events = {k: v for k, v in sorted(events.items(), key=lambda ele: ele[0])}
-    for key in events:
+    for key in events.get_event_names():
 
-        paths = [p for p in events[key] if p in ogg_files]
+        paths = set(ogg_files).intersection(events.get_sound_files(key))
 
         c = len(paths)
         if c > 0:
@@ -278,39 +229,44 @@ def main():
     # Platform independent clearing of screen
     os.system('cls||clear')
 
-    args = handle_command_line()
+    try:
+        args = handle_command_line()
+    except FileNotFoundError as e:
+        sys.exit(str(e))
 
     print(f"{bold}{white}Scanning file:\n{default}{yellow}{args.path}")
 
-    # All sound event records in sounds.json
-    events: dict[str, list] = get_event_dictionary(args.path)
-
     # The "trunk" of our tree
-    assets_folder: Path = args.path.parent.parent
+    assets_folder: CPath = args.path.parent.parent
+
+    # All sound event records in sounds.json
+    with open(args.path, "r") as file:
+        events = SoundEventHandler(assets_folder, json.load(file))
 
     # All files in the entire folder structure
-    all_files: list[Path] = get_all_files(assets_folder)
+    all_files: list[CPath] = get_all_files(assets_folder)
 
     # All sound event records in the vanilla game
-    script_home_path: Path = Path(__file__).absolute().resolve().parent
-    vanilla_events = get_event_dictionary(
-        script_home_path / Path("vanilla-sounds.json"))
+    script_home_path: CPath = CPath(__file__).absolute().resolve().parent
+
+    with open(script_home_path / CPath("vanilla-sounds.json"), "r") as file:
+        vanilla_events = SoundEventHandler(assets_folder, json.load(file))
 
     # Collect all the files that don't belong in the pack
-    irrelevant_files: list[Path] = get_irrelevant_files(all_files)
+    irrelevant_files: list[CPath] = get_irrelevant_files(all_files)
 
     # Remove the irrelevant files from our list
-    all_files = [f for f in all_files if f not in irrelevant_files]
-    ogg_files = [f for f in all_files if f.suffix == ".ogg"]
+    ogg_files = [
+        f for f in all_files if f.suffix == ".ogg" and f not in irrelevant_files]
 
     # Collect all the ogg files that have no JSON reference
-    orphaned_files: list[Path] = get_orphaned_files(events, ogg_files)
+    orphaned_files: list[CPath] = get_orphaned_files(events, ogg_files)
 
     # Remove the orphans from our list
     ogg_files = [f for f in ogg_files if f not in orphaned_files]
 
     # Collect all the JSON references that have no corresponding ogg file
-    broken_links: list[Path] = (
+    broken_links: list[CPath] = (
         get_broken_links(events, vanilla_events, ogg_files))
 
     # Remove the orphans from our list
@@ -323,9 +279,9 @@ def main():
 
     # Print all the warnings to the user
     print_warnings(
-        "The following file names violate"
-        "Mojang's naming constraints:",
-        invalid_file_names,
+        "The following files are not .ogg files, "
+        "but are in the sound folders anyway:",
+        irrelevant_files,
         assets_folder)
 
     print_warnings(
@@ -341,9 +297,9 @@ def main():
         assets_folder)
 
     print_warnings(
-        "The following files are not .ogg files, "
-        "but are in the sound folders anyway:",
-        irrelevant_files,
+        "The following file names violate "
+        "Mojang's naming constraints:",
+        invalid_file_names,
         assets_folder)
 
     print_summary(events, ogg_files)

@@ -1,122 +1,169 @@
 import pytest
 
-from objects.custom_path import Path
+from SoundEventHandler import SoundEventHandler
+from objects.custom_path import CPath
 from spcheck import get_broken_links
 
 
 def test_get_broken_links_should_not_raise_error_when_vanilla_sounds_is_empty():
 
-    events: dict[str, list[Path]] = {"test": [Path("/dummy")]}
-    vanilla_events: dict[str, list[Path]] = {}
-    ogg_files: list[Path] = []
+    root_folder = CPath("assets/")
+    vanilla_events = SoundEventHandler(root_folder)
+
+    events = SoundEventHandler(
+        root_folder=root_folder,
+        json_events={"test": {"sounds": ["dummy"]}})
 
     try:
-        get_broken_links(events, vanilla_events, ogg_files)
+        get_broken_links(events, vanilla_events, [])
     except UnboundLocalError:
         pytest.fail("Unexpected UnboundLocalError...")
 
 
 def test_get_broken_links_should_return_list_when_json_does_not_match_files_including_vanilla():
 
-    path1: Path = Path("/path/to/linked/villager.death/file01.ogg")
-    path2: Path = Path("/path/to/unlinked/villager.death/file02.ogg")
-    path3: Path = Path("/path/to/linked/cow.ambient/file01.ogg")
-    path4: Path = Path("/path/to/unlinked/cow.ambient/file02.ogg")
+    path1: str = "path/to/linked/villager.death/file01"
+    path2: str = "path/to/unlinked/villager.death/file02"
+    path3: str = "path/to/linked/cow.ambient/file01"
+    path4: str = "path/to/unlinked/cow.ambient/file02"
 
-    ogg_files: list[Path] = [Path(path1), Path(path3)]
+    ogg_files: list[CPath] = [
+        CPath("assets/minecraft/sounds/" + path1 + ".ogg"),
+        CPath("assets/minecraft/sounds/" + path3 + ".ogg")]
 
-    events: dict[str, list[Path]] = {
-        "entity.villager.death": [path1, path2],
-        "entity.cow.ambient": [path3, path4]}
+    events = SoundEventHandler(
+        root_folder=CPath("assets/"),
+        json_events={
+            "entity.villager.death": {"sounds": [path1, path2]},
+            "entity.cow.ambient": {"sounds": [path3, path4]}})
 
-    vanilla_events: dict[str, list[Path]] = {"entity.villager.death": [Path("dummy")]}
+    vanilla_events = SoundEventHandler(
+        CPath("assets/"),
+        {"entity.villager.death": {"sounds": ["dummy"]}})
 
     result = get_broken_links(events, vanilla_events, ogg_files)
+
     assert len(result) == 2
-    assert result[0] == path4
-    assert result[1] == path2
+
+    assert result[0] == CPath(
+        "assets/minecraft/sounds/path/to/unlinked/cow.ambient/file02.ogg")
+
+    assert result[1] == CPath(
+        "assets/minecraft/sounds/path/to/unlinked/villager.death/file02.ogg")
 
 
 def test_get_broken_links_should_return_list_when_some_json_does_not_match_some_vanilla():
 
-    path1: Path = Path("/path/to/villager.death/file01.ogg")
-    path2: Path = Path("/path/to/bad/villager.death/file02.ogg")
-    path3: Path = Path("/path/to/cow.ambient/file03.ogg")
-    path4: Path = Path("/path/to/cow.ambient/file04.ogg")
-    path5: Path = Path("/path/to/bad/witch.celebrate/file05.ogg")
-    path6: Path = Path("/path/to/witch.celebrate/file06.ogg")
+    path1: str = "path/to/villager.death/file01"
+    path2: str = "path/to/bad/villager.death/file02"
+    path3: str = "path/to/cow.ambient/file03"
+    path4: str = "path/to/cow.ambient/file04"
+    path5: str = "path/to/bad/witch.celebrate/file05"
+    path6: str = "path/to/witch.celebrate/file06"
 
-    ogg_files: list[Path] = []
+    events = SoundEventHandler(
+        root_folder=CPath("assets/"),
+        json_events={
+            "entity.villager.death": {"sounds": [path1, path2]},
+            "entity.cow.ambient": {"sounds": [path3, path4]},
+            "entity.witch.celebrate": {"sounds": [path5, path6]}})
 
-    events: dict[str, list[Path]] = {
-        "entity.villager.death": [path1, path2],
-        "entity.cow.ambient": [path3, path4],
-        "entity.witch.celebrate": [path5, path6]}
+    vanilla_events = SoundEventHandler(
+        root_folder=CPath("assets/"),
+        json_events={
+            "entity.villager.death": {"sounds": [path1]},
+            "entity.cow.ambient": {"sounds": [path3, path4]},
+            "entity.witch.celebrate": {"sounds": [path6]}})
 
-    vanilla_events: dict[str, list[Path]] = {
-        "entity.villager.death": [path1],
-        "entity.cow.ambient": [path3, path4],
-        "entity.witch.celebrate": [path6]}
+    result = get_broken_links(events, vanilla_events, [])
 
-    result = get_broken_links(events, vanilla_events, ogg_files)
     assert len(result) == 2
-    assert result[0] == path2
-    assert result[1] == path5
+
+    assert result[0] == CPath(
+        "assets/minecraft/sounds/path/to/bad/villager.death/file02.ogg")
+
+    assert result[1] == CPath(
+        "assets/minecraft/sounds/path/to/bad/witch.celebrate/file05.ogg")
 
 
 def test_get_broken_links_should_return_list_that_is_sorted_alphabetically():
 
-    path1: Path = Path("/path/to/villager.death/file01.ogg")
-    path2: Path = Path("/path/to/slime.squish/file02.ogg")
+    path1: str = "path/to/villager.death/file01"
+    path2: str = "path/to/slime.squish/file02"
 
-    ogg_files: list[Path] = []
-    vanilla_events: dict[str, list[Path]] = {}
+    vanilla_events = SoundEventHandler(CPath("assets/"))
 
-    events: dict[str, list[Path]] = {
-        "entity.villager.death": [path1],
-        "entity.slime.squish": [path2]}
+    events = SoundEventHandler(
+        root_folder=CPath("assets/"),
+        json_events={
+            "entity.villager.death": {"sounds": [path1]},
+            "entity.slime.squish": {"sounds": [path2]}})
 
-    result = get_broken_links(events, vanilla_events, ogg_files)
+    result = get_broken_links(events, vanilla_events, [])
+
     assert len(result) == 2
-    assert result[0] == path2
-    assert result[1] == path1
+
+    assert result[0] == CPath(
+        "assets/minecraft/sounds/path/to/slime.squish/file02.ogg")
+
+    assert result[1] == CPath(
+        "assets/minecraft/sounds/path/to/villager.death/file01.ogg")
 
 
 def test_get_broken_links_should_return_empty_list_when_json_matches_vanilla():
 
-    path1: Path = Path("/path/to/linked/villager.death/file01.ogg")
-    path2: Path = Path("/path/to/unlinked/villager.death/file02.ogg")
-    path3: Path = Path("mob/goat/step1.ogg")
-    path4: Path = Path("/path/to/linked/cow.ambient/file01.ogg")
-    path5: Path = Path("/path/to/unlinked/cow.ambient/file02.ogg")
+    path1: str = "path/to/linked/villager.death/file01"
+    path2: str = "path/to/unlinked/villager.death/file02"
+    path3: str = "mob/goat/step1"
+    path4: str = "path/to/linked/cow.ambient/file01"
+    path5: str = "path/to/unlinked/cow.ambient/file02"
 
-    ogg_files: list[Path] = [Path(path1), Path(path4)]
+    ogg_files: list[CPath] = [
+        CPath(f"assets/minecraft/sounds/{path1}.ogg"),
+        CPath(f"assets/minecraft/sounds/{path4}.ogg")]
 
-    events: dict[str, list[Path]] = {
-        "entity.villager.death": [path1, path2],
-        "entity.goat.step": [path3],
-        "entity.cow.ambient": [path4, path5]}
+    events = SoundEventHandler(
+        root_folder=CPath("assets/"),
+        json_events={
+            "entity.villager.death": {"sounds": [path1, path2]},
+            "entity.goat.step": {"sounds": [path3]},
+            "entity.cow.ambient": {"sounds": [path4, path5]}})
 
-    vanilla_events: dict[str, list[Path]] = {"entity.goat.step": [Path("mob/goat/step1.ogg")]}
+    vanilla_events = SoundEventHandler(
+        root_folder=CPath("assets/"),
+        json_events={
+            "entity.goat.step": {"sounds": ["mob/goat/step1"]}})
 
     result = get_broken_links(events, vanilla_events, ogg_files)
+
     assert len(result) == 2
-    assert result[0] == path5
-    assert result[1] == path2
+
+    assert result[0] == CPath(
+        "assets/minecraft/sounds/path/to/unlinked/cow.ambient/file02.ogg")
+
+    assert result[1] == CPath(
+        "assets/minecraft/sounds/path/to/unlinked/villager.death/file02.ogg")
 
 
 def test_get_broken_links_should_return_empty_list_when_json_matches_files():
 
-    path1: Path = Path("/path/to/linked/villager.death/file01.ogg")
-    path3: Path = Path("/path/to/linked/cow.ambient/file01.ogg")
+    path1: str = "path/to/linked/villager.death/file01"
+    path3: str = "path/to/linked/cow.ambient/file01"
 
-    ogg_files: list[Path] = [Path(path1), Path(path3)]
+    ogg_files: list[CPath] = [
+        CPath(f"assets/minecraft/sounds/{path1}.ogg"),
+        CPath(f"assets/minecraft/sounds/{path3}.ogg")]
 
-    events: dict[str, list[Path]] = {
-        "entity.villager.death": [path1],
-        "entity.cow.ambient": [path3]}
+    events = SoundEventHandler(
+        root_folder=CPath("assets/"),
+        json_events={
+            "entity.villager.death": {"sounds": [path1]},
+            "entity.cow.ambient": {"sounds": [path3]}})
 
-    vanilla_events: dict[str, list[Path]] = {"entity.villager.death": [Path("dummy")]}
+    vanilla_events = SoundEventHandler(
+        root_folder=CPath("assets/"),
+        json_events={
+            "entity.villager.death": {"sounds": ["dummy"]}})
 
     result = get_broken_links(events, vanilla_events, ogg_files)
     assert len(result) == 0
@@ -124,16 +171,22 @@ def test_get_broken_links_should_return_empty_list_when_json_matches_files():
 
 def test_get_broken_links_should_return_empty_list_when_links_match_symlinked_files():
 
-    event_path = "/path/to/file.ogg"
+    event_path: str = "path/to/file"
     actual_file: str = "/actual/path/to/linked/cow.ambient/file01.ogg"
 
-    fancy_path = Path(event_path)
+    fancy_path = CPath(f"assets/minecraft/sounds/{event_path}.ogg")
     fancy_path.target_path = actual_file
-    ogg_files: list[Path] = [fancy_path]
+    ogg_files: list[CPath] = [fancy_path]
 
-    events: dict[str, list[Path]] = {"entity.villager.death": [Path(event_path)]}
+    events = SoundEventHandler(
+        root_folder=CPath("assets/"),
+        json_events={
+            "entity.villager.death": {"sounds": [event_path]}})
 
-    vanilla_events: dict[str, list[Path]] = {"entity.villager.death": [Path("dummy")]}
+    vanilla_events = SoundEventHandler(
+        root_folder=CPath("assets/"),
+        json_events={
+            "entity.villager.death": {"sounds": ["dummy"]}})
 
     result = get_broken_links(events, vanilla_events, ogg_files)
     assert len(result) == 0
@@ -141,14 +194,19 @@ def test_get_broken_links_should_return_empty_list_when_links_match_symlinked_fi
 
 def test_get_broken_links_should_return_list_when_json_matches_symlinked_files_that_cannot_be_resolved():
 
-    path: Path = Path("/path/to/file.ogg")
-    path.is_symbolic_link = True  # providing this with no target makes this broken
+    # providing this with no target makes this broken
+    file: CPath = CPath("path/to/file.ogg")
+    file.is_symbolic_link = True
+    ogg_files: list[CPath] = [file]
 
-    ogg_files: list[Path] = [path]
+    events = SoundEventHandler(
+        root_folder=CPath("assets/"),
+        json_events={
+            "entity.villager.death": {"sounds": ["path/to/file"]}})
 
-    events: dict[str, list[Path]] = {"entity.villager.death": [path]}
-    vanilla_events: dict[str, list[Path]] = {}
+    vanilla_events = SoundEventHandler(CPath("assets/"))
 
     result = get_broken_links(events, vanilla_events, ogg_files)
+
     assert len(result) == 1
-    assert result[0] == path
+    assert result[0] == CPath("assets/minecraft/sounds/path/to/file.ogg")
