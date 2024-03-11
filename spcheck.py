@@ -15,7 +15,7 @@ Command-line arguments:
     --version   (-v)    Show version number
 """
 
-__version__ = '2.30'
+__version__ = '3.0'
 __maintainer__ = "kuoxsr@gmail.com"
 __status__ = "Prototype"
 
@@ -25,7 +25,9 @@ import json
 import os
 import re
 import sys
+import zipfile
 
+from tempfile import TemporaryDirectory
 from SoundEventHandler import SoundEventHandler
 from objects.custom_path import CPath
 
@@ -55,8 +57,11 @@ def handle_command_line():
         "remainder",
         action="store",
         nargs=argparse.REMAINDER,
-        help=("CPath to the sounds.json file you want to check.  "
-              "The file name itself is not required."))
+        help=("Path to the sounds.json file you want to check. "
+              "The file name itself is not required. "
+              "You can also specify a .zip file, and this "
+              "application will check the contents in a"
+              "temporary directory."))
 
     args = parser.parse_args()
 
@@ -80,8 +85,10 @@ def get_real_path(args_path: list[str]) -> CPath:
                                 f"{path} is not a valid filesystem path.")
 
     # Has the user specified the wrong file extension?
-    if path.suffix != ".json":
-        raise ValueError(f"specified file: {path} is not a JSON file")
+    if path.suffix not in [".json", ".zip"]:
+        raise ValueError(
+            f"specified file: {path} is not a supported file\n"
+            f"Supported formats are currently .json and .zip")
 
     return CPath(path).resolve()
 
@@ -235,6 +242,24 @@ def main():
         sys.exit(str(e))
 
     print(f"{bold}{white}Scanning file:\n{default}{yellow}{args.path}")
+
+    # Handle .zip files
+    if args.path.suffix == ".zip":
+
+        # Create temp directory
+        zip_dir = TemporaryDirectory(dir="/tmp")
+
+        # Extract contents of zip to temp dir
+        file = zipfile.ZipFile(args.path)
+        file.extractall(path=zip_dir.name)
+
+        # Set args.path to the location of sounds.json within the temp dir
+        sounds_json_paths = list(CPath(zip_dir.name).glob("**/sounds.json"))
+
+        # If it can find sounds.json, retrieve that path for the rest
+        # of the processing.
+        if len(sounds_json_paths) == 1:
+            args.path = sounds_json_paths[0]
 
     # The "trunk" of our tree
     assets_folder: CPath = args.path.parent.parent
