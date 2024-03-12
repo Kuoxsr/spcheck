@@ -15,7 +15,7 @@ Command-line arguments:
     --version   (-v)    Show version number
 """
 
-__version__ = '3.0'
+__version__ = '3.1'
 __maintainer__ = "kuoxsr@gmail.com"
 __status__ = "Prototype"
 
@@ -52,6 +52,12 @@ def handle_command_line():
             "--version",
             action="version", 
             version="%(prog)s version " + __version__)
+
+    parser.add_argument(
+        "-n",
+        "--no-clear",
+        action='store_true',
+        help="Don't clear the screen before displaying report.")
 
     parser.add_argument(
         "remainder",
@@ -233,13 +239,14 @@ def main():
     bold = "\033[1m"
     default = "\033[0m"
 
-    # Platform independent clearing of screen
-    os.system('cls||clear')
-
     try:
         args = handle_command_line()
     except FileNotFoundError as e:
         sys.exit(str(e))
+
+    # Platform independent clearing of screen
+    if not args.no_clear:
+        os.system('cls||clear')
 
     print(f"{bold}{white}Scanning file:\n{default}{yellow}{args.path}")
 
