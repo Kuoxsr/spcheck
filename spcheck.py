@@ -15,7 +15,7 @@ Command-line arguments:
     --version   (-v)    Show version number
 """
 
-__version__ = '3.1'
+__version__ = '3.1.1'
 __maintainer__ = "kuoxsr@gmail.com"
 __status__ = "Prototype"
 
@@ -28,7 +28,7 @@ import sys
 import zipfile
 
 from tempfile import TemporaryDirectory
-from SoundEventHandler import SoundEventHandler
+from sound_event_handler import SoundEventHandler
 from objects.custom_path import CPath
 
 

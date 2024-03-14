@@ -1,6 +1,6 @@
 import pytest
 
-from SoundEventHandler import SoundEventHandler
+from objects.sound_event_handler import SoundEventHandler
 from objects.custom_path import CPath
 from spcheck import get_broken_links
 

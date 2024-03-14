@@ -1,6 +1,6 @@
 import pytest
 
-from SoundEventHandler import SoundEventHandler, SoundEvent
+from sound_event_handler import SoundEventHandler, SoundEvent
 from custom_path import CPath
 
 
