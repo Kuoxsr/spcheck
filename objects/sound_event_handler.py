@@ -100,20 +100,6 @@ class SoundEventHandler:
         result = set(this).intersection(other)
         return sorted(result)  # noqa
 
-    @staticmethod
-    def get_namespace(sound_name: str) -> str:
-        """Extract the namespace from a sound record"""
-
-        namespace: str = "minecraft"
-
-        if ":" in sound_name:
-            parts = sound_name.split(":")
-
-            if len(parts[0]) > 0:
-                namespace = parts[0]
-
-        return namespace
-
     def get_sound_path(self, sound_name: str) -> Path:
         """Create a real path from a sound record"""
 

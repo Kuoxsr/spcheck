@@ -432,48 +432,6 @@ def test_get_sound_files_in_should_return_empty_list_if_no_files_match_in_other_
 
 
 # --------------------------------------------------------------
-# get_namespace
-# --------------------------------------------------------------
-
-def test_get_namespace_should_separate_namespace_correctly():
-
-    sound_name: str = "test-namespace:/path/to/file01"
-
-    events = SoundEventHandler(
-        root_folder=CPath("/"),
-        json_events={"dummy": {"sounds": ["dummy"]}})
-
-    result: str = events.get_namespace(sound_name)
-
-    assert result == "test-namespace"
-
-
-def test_get_namespace_should_fall_back_on_minecraft_when_no_namespace_specified():
-
-    sound_name: str = "path/to/file01"
-    events = SoundEventHandler(
-        root_folder=CPath("/"),
-        json_events={"dummy": {"sounds": ["dummy"]}})
-
-    result: str = events.get_namespace(sound_name)
-
-    assert result == "minecraft"
-
-
-def test_get_namespace_should_fall_back_on_minecraft_when_namespace_is_zero_width():
-
-    sound_name: str = ":/path/to/file01"
-
-    events = SoundEventHandler(
-        root_folder=CPath("/"),
-        json_events={"dummy": {"sounds": ["dummy"]}})
-
-    result: str = events.get_namespace(sound_name)
-
-    assert result == "minecraft"
-
-
-# --------------------------------------------------------------
 # get_sound_path
 # --------------------------------------------------------------
 
