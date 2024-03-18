@@ -24,7 +24,7 @@ class SoundEvent(TypedDict):
 
 
 class SoundEventHandler:
-    def __init__(self, root_folder: Path, json_events: dict = None):
+    def __init__(self, root_folder: Path, json_events: dict):
         self.root_folder: Path = root_folder
         self.raw_json: dict = json_events
         self.events: dict[str, SoundEvent] = self._parse_json()
@@ -36,9 +36,6 @@ class SoundEventHandler:
         We want to convert those here, so we don't need to expect
         to handle them later on.
         """
-        if self.raw_json is None:
-            return {}
-
         json_dict: dict[str, SoundEvent] = self.raw_json
         for key, event in json_dict.items():
 

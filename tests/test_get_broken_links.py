@@ -7,11 +7,12 @@ from spcheck import get_broken_links
 
 def test_get_broken_links_should_not_raise_error_when_vanilla_sounds_is_empty():
 
-    root_folder = CPath("assets/")
-    vanilla_events = SoundEventHandler(root_folder)
+    vanilla_events = SoundEventHandler(
+        root_folder=CPath("assets/"),
+        json_events={})
 
     events = SoundEventHandler(
-        root_folder=root_folder,
+        root_folder=CPath("assets/"),
         json_events={"test": {"sounds": ["dummy"]}})
 
     try:
@@ -38,8 +39,8 @@ def test_get_broken_links_should_return_list_when_json_does_not_match_files_incl
             "entity.cow.ambient": {"sounds": [path3, path4]}})
 
     vanilla_events = SoundEventHandler(
-        CPath("assets/"),
-        {"entity.villager.death": {"sounds": ["dummy"]}})
+        root_folder=CPath("assets/"),
+        json_events={"entity.villager.death": {"sounds": ["dummy"]}})
 
     result = get_broken_links(events, vanilla_events, ogg_files)
 
@@ -91,7 +92,9 @@ def test_get_broken_links_should_return_list_that_is_sorted_alphabetically():
     path1: str = "path/to/villager.death/file01"
     path2: str = "path/to/slime.squish/file02"
 
-    vanilla_events = SoundEventHandler(CPath("assets/"))
+    vanilla_events = SoundEventHandler(
+        root_folder=CPath("assets/"),
+        json_events={})
 
     events = SoundEventHandler(
         root_folder=CPath("assets/"),
@@ -194,7 +197,7 @@ def test_get_broken_links_should_return_empty_list_when_links_match_symlinked_fi
 
 def test_get_broken_links_should_return_list_when_json_matches_symlinked_files_that_cannot_be_resolved():
 
-    # providing this with no target makes this broken
+    # Providing this with no target makes this a broken symlink
     file: CPath = CPath("path/to/file.ogg")
     file.is_symbolic_link = True
     ogg_files: list[CPath] = [file]
@@ -204,7 +207,9 @@ def test_get_broken_links_should_return_list_when_json_matches_symlinked_files_t
         json_events={
             "entity.villager.death": {"sounds": ["path/to/file"]}})
 
-    vanilla_events = SoundEventHandler(CPath("assets/"))
+    vanilla_events = SoundEventHandler(
+        root_folder=CPath("assets/"),
+        json_events={})
 
     result = get_broken_links(events, vanilla_events, ogg_files)
 

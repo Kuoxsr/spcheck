@@ -5,7 +5,8 @@ from spcheck import print_summary
 
 def test_print_summary_should_return_empty_list_when_no_events_to_report(capsys):
 
-    events = SoundEventHandler(CPath("assets/"))
+    events = SoundEventHandler(CPath("assets/"), {})
+
     ogg_files: list[CPath] = []
     print_summary(events, ogg_files)
     capture = capsys.readouterr()

@@ -28,7 +28,7 @@ import sys
 import zipfile
 
 from tempfile import TemporaryDirectory
-from sound_event_handler import SoundEventHandler
+from objects.sound_event_handler import SoundEventHandler
 from objects.custom_path import CPath
 
 
