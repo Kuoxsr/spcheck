@@ -120,10 +120,6 @@ class SoundEventHandler:
         namespace: str = "minecraft"
         sound_path: str = sound_name
 
-        # If sound_name has the root path in it, just return it
-        if str(self.root_folder) in sound_name:
-            return Path(sound_name)
-
         if ":" in sound_name:
             parts: list[str] = sound_name.split(":")
             namespace: str = parts[0]

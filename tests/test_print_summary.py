@@ -37,11 +37,11 @@ def test_print_summary_should_return_list_when_there_are_events_to_report(capsys
         root_folder=CPath("assets/"),
         json_events={
             "test03.event.name":
-                {"sounds": [str(file6)]},
+                {"sounds": ["path/file06"]},
             "test02.event.name":
-                {"sounds": [str(file4), str(file5)]},
+                {"sounds": ["path/file04", "path/file05"]},
             "test01.event.name":
-                {"sounds": [str(file1), str(file2), str(file3)]}})
+                {"sounds": ["path/file01", "path/file02", "path/file03"]}})
 
     print_summary(events, ogg_files)
     capture = capsys.readouterr()
@@ -69,11 +69,11 @@ def test_print_summary_should_sort_event_names_alphabetically(capsys):
         root_folder=CPath("assets/"),
         json_events={
             "test03.event.name":
-                {"sounds": [str(file6)]},
+                {"sounds": ["path/file06"]},
             "test02.event.name":
-                {"sounds": [str(file4), str(file5)]},
+                {"sounds": ["path/file04", "path/file05"]},
             "test01.event.name":
-                {"sounds": [str(file1), str(file2), str(file3)]}})
+                {"sounds": ["path/file01", "path/file02", "path/file03"]}})
 
     print_summary(events, ogg_files)
     capture = capsys.readouterr()

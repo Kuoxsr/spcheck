@@ -161,9 +161,7 @@ def get_broken_links(
     """
 
     # Normal files
-    file_paths = [
-        events.get_sound_path(str(p)) for p
-        in ogg_files if p.is_symbolic_link is False]
+    file_paths = [p for p in ogg_files if p.is_symbolic_link is False]
 
     # Symlinks that can be resolved
     file_paths.extend([

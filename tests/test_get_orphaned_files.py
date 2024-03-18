@@ -45,7 +45,7 @@ def test_get_orphaned_files_should_return_empty_list_when_everything_linked_corr
 
     events = SoundEventHandler(
         root_folder=CPath("assets/"),
-        json_events={"dummy": {"sounds": [file1]}})
+        json_events={"dummy": {"sounds": ["test/path/to/file"]}})
 
     result = get_orphaned_files(events, ogg_files)
 
@@ -61,7 +61,7 @@ def test_get_orphaned_files_should_return_empty_list_when_file_is_referenced_by_
 
     events = SoundEventHandler(
         root_folder=CPath("assets/"),
-        json_events={"dummy": {"sounds": [str(path1)]}})
+        json_events={"dummy": {"sounds": ["path/to/file"]}})
 
     result = get_orphaned_files(events, ogg_files)
     assert len(result) == 0
@@ -80,7 +80,7 @@ def test_get_orphaned_files_should_not_return_broken_links_as_orphans():
 
     events = SoundEventHandler(
         root_folder=CPath("assets/"),
-        json_events={"dummy": {"sounds": [str(path1)]}})
+        json_events={"dummy": {"sounds": ["path/to/file"]}})
 
     result = get_orphaned_files(events, ogg_files)
     assert len(result) == 0
